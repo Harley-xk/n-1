@@ -1,0 +1,60 @@
+// VS Code 调试配置：仅调试前端 / 仅调试后端 / 前后端同步调试（适用于 VS Code 及其衍生编辑器）
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // 启动浏览器调试前端：自动先以后台任务启动 Vite 开发服务器（任务 dev:web）
+      // 如无 Chrome 可将 type 改为 "edge"
+      "type": "chrome",
+      "request": "launch",
+      "name": "前端：仅调试前端",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/web/src",
+      "sourceMapPathOverrides": {
+        "webpack:///./src/*": "${webRoot}/*"
+      },
+      "preLaunchTask": "dev:web",
+      // 停止调试时联动终止 preLaunchTask 启动的后台任务
+      "postDebugTask": "terminate:dev:web"
+    },
+    {
+      // 组合调试专用：与「仅调试前端」一致，但 preLaunchTask 换为 wait:server
+      // （先拉起 Vite、再等后端 3000 端口就绪），确保浏览器打开页面时前后端均已可用
+      "type": "chrome",
+      "request": "launch",
+      "name": "前端：等待后端就绪（组合调试用）",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/web/src",
+      "sourceMapPathOverrides": {
+        "webpack:///./src/*": "${webRoot}/*"
+      },
+      "preLaunchTask": "wait:server",
+      "postDebugTask": "terminate:dev:web"
+    },
+    {
+      // 以调试模式直接启动 NestJS：调试会话主体即后端进程本身（VS Code 为其父进程），
+      // 停止调试即终止整个进程树，无需 preLaunchTask / postDebugTask 联动
+      "type": "node",
+      "request": "launch",
+      "name": "后端：仅调试后端",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "server", "run", "dev:debug"],
+      "console": "integratedTerminal",
+      // watch 模式下 nest 重启应用子进程时保持调试链路
+      "restart": true,
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/server/dist/**/*.js"],
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "compounds": [
+    {
+      // 组合启动：同时调试前端与后端，结束会话时一并停止。
+      // 注意 compound 内两个会话是并行启动的，「先起后端再开浏览器」的顺序由
+      // 前端配置的 preLaunchTask（wait:server）等待后端端口就绪来保证
+      "name": "前后端：同步调试",
+      "configurations": ["后端：仅调试后端", "前端：等待后端就绪（组合调试用）"],
+      "stopAll": true
+    }
+  ]
+}

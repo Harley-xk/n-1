@@ -1,0 +1,12 @@
+# pnpm 单仓库（monorepo）工作区定义：后端 server、前端 web 与浏览器端到端测试 e2e 三个子包
+
+packages:
+  - server
+  - web
+  - e2e
+# 构建脚本授权：esbuild 为 Vite 核心依赖、unrs-resolver 为 import-x 的原生解析器、lefthook 安装 git 钩子，均需允许；@scarf/scarf 为遥测组件拒绝
+allowBuilds:
+  '@scarf/scarf': false
+  esbuild: true
+  lefthook: true
+  unrs-resolver: true

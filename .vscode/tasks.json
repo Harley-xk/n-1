@@ -1,0 +1,53 @@
+// VS Code 调试辅助任务：作为前端调试会话的 preLaunchTask 后台启动 Vite 开发服务器
+// （后端调试为 launch 模式直接启动进程，无需任务联动）
+{
+  "version": "2.0.0",
+  // 命令型输入：${input:id} 解析时会以 args 作为参数执行 workbench.action.tasks.terminate，
+  // 这是给该内建命令传目标任务 label 的唯一官方途径（在 command 里直接写 ${command:...} 无法携带参数）
+  "inputs": [
+    {
+      "id": "terminateWeb",
+      "type": "command",
+      "command": "workbench.action.tasks.terminate",
+      "args": "dev:web"
+    }
+  ],
+  "tasks": [
+    {
+      "label": "dev:web",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["--filter", "web", "run", "dev"],
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        // 仅用于识别后台任务启动完成（Vite 输出 Local: / ready in 即视为就绪），不解析问题
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*$",
+          "endsPattern": "^.*(Local:|ready in).*$"
+        }
+      }
+    },
+    {
+      // 组合调试前置：dependsOn 先等待 Vite 就绪（dev:web 的 background 匹配），
+      // 再轮询后端 3000 端口直至返回 HTTP 响应，确保 Chrome 打开页面时前后端均已可用
+      "label": "wait:server",
+      "type": "shell",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/wait-for-server.mjs"],
+      "dependsOn": ["dev:web"],
+      "problemMatcher": []
+    },
+    {
+      // 停止调试时按 label 精确终止 dev:web（终止动作发生在 ${input:...} 解析阶段，echo 仅占位避免空命令）
+      "label": "terminate:dev:web",
+      "type": "shell",
+      "command": "echo ${input:terminateWeb}",
+      "problemMatcher": []
+    }
+  ]
+}

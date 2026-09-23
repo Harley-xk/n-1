@@ -1,0 +1,15 @@
+{
+  "name": "e2e",
+  "version": "0.1.0",
+  "description": "n-1 浏览器端到端测试（Playwright，全链路验收：页面 → Vite 代理 → 后端 API）",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}

@@ -1,0 +1,4 @@
+// VS Code 推荐扩展：Vue 语言服务、ESLint 与 EditorConfig
+{
+  "recommendations": ["Vue.volar", "dbaeumer.vscode-eslint", "EditorConfig.EditorConfig"]
+}

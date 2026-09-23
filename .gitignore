@@ -1,0 +1,37 @@
+# Git 忽略规则：依赖、构建产物、本地环境变量、日志与编辑器文件
+
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+coverage/
+
+# Playwright 产物（报告与运行时产物，e2e 包）
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# 环境变量（含密钥的本地配置不入库，模板见 server/.env.example）
+.env
+.env.local
+.env.*.local
+
+# 日志与临时文件
+*.log
+logs/
+*.tsbuildinfo
+
+# Claude Code 本地配置（团队共享的 .claude/settings.json 可入库，个人配置忽略）
+.claude/settings.local.json
+
+# 编辑器与系统文件（.vscode 中的团队共享配置入库，个人配置忽略）
+.idea/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+!.vscode/settings.json
+.DS_Store
+Thumbs.db

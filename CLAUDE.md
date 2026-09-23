@@ -1,0 +1,82 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## 最高优先级规则
+
+**[rules/base.md](rules/base.md) 是本仓库最高优先级的 AI 工作规则，任何任务开始前先遵循该文件。** 核心要求：**文档先行**——业务开发先在 `docs/` 下写设计文档（按模块分目录、中文命名），再写代码；**仅业务代码文件**（`.ts`/`.js`/`.mjs`/`.vue` 业务源码）需在文件首行携带头部注释（作者 / 创建日期 `YYYY-MM-DD` / 文件描述），注释语法按文件语言适配（`.ts`/`.js` 用 `/* */`，`.vue` 用 `<!-- -->`）；**配置文件、测试文件、资源文件不需要署名**。本项目以 **MIT 许可证**开源，许可证全文见根目录 [LICENSE](LICENSE)。
+
+## 语言约定
+
+**全局使用中文思考和对话**：与用户的交流、思考过程一律使用中文。
+
+所有文档、代码注释、接口描述、提交信息均使用**中文**撰写。
+
+## 项目概述
+
+n-1：企业级全栈项目框架底座，面向 **vibe coding first** 的 AI 编程范式（为 AI 编码服务的工程基座，非 AI Agent 项目）。pnpm workspace 单仓库（monorepo）：
+
+- `server/` —— NestJS 11 + TypeORM + PostgreSQL 后端 API
+- `web/` —— Vue 3 + Pinia + Element Plus 前端 SPA
+- `e2e/` —— Playwright 浏览器端到端测试（页面 → Vite 代理 → 后端 API 全链路验收）
+- `docs/` —— 中文开发文档
+- `rules/` —— AI 工作规则（base.md 最高优先级）
+- `scripts/` —— 工程化脚本
+
+## 常用命令
+
+在仓库根目录执行（必须使用 pnpm，不要用 npm/yarn）：
+
+| 命令 | 作用 |
+| --- | --- |
+| `pnpm install` | 安装全部依赖（自动安装 lefthook 提交钩子） |
+| `pnpm dev` | 并行启动前后端开发服务 |
+| `pnpm dev:server` / `pnpm dev:web` | 单独启动后端（watch 模式）/ 前端 |
+| `pnpm build` | 构建前后端 |
+| `pnpm test` | 前后端单元测试（server Jest / web Vitest） |
+| `pnpm --filter server test -- app.controller` | 运行单个测试（按名称匹配测试文件） |
+| `pnpm test:e2e` | 后端 e2e 测试（无需真实数据库，DataSource 已打桩） |
+| `pnpm test:e2e:web` | 浏览器端到端测试（Playwright，自动拉起前端，复用本机 Chrome/Edge；`E2E_BROWSER=msedge` 可切 Edge） |
+| `pnpm check` | 一键自检：lint + 类型检查 + 单测 + 后端 e2e（完成定义，见 rules/base.md） |
+| `pnpm lint` | 前后端 ESLint 检查并修复 |
+| `pnpm type-check` | 前端 vue-tsc 类型检查 |
+
+VS Code 调试：`.vscode/launch.json` 提供三个一键配置（仅前端 / 仅后端 / 前后端同步）。后端为 `launch` 模式直接以调试方式运行 `pnpm --filter server run dev:debug`，停止调试即终止进程；前端调试主体是浏览器页面，Vite 经 `preLaunchTask`（任务 `dev:web`）后台启动、`postDebugTask` 随会话终止。
+
+## 架构
+
+### 整体
+
+- 前后端同仓库、独立构建，pnpm workspace 管理
+- 端口约定：后端 **3000**（全局路由前缀 `/api`，Swagger 在 `/api-docs`）、前端 **5173**（Vite 将 `/api` 代理到 3000）、PostgreSQL **独立部署**（连接信息经 `server/.env` 配置，本机已部署实例的口令与模板默认值不同）
+- 请求链路：浏览器 → Vite 代理 → NestJS Controller → Service → TypeORM Repository → PostgreSQL
+
+### 工程化设施
+
+- **提交门禁**（lefthook，钩子随 `pnpm install` 自动安装）：pre-commit 对暂存代码文件自动 ESLint 修复并重新暂存；commit-msg 校验提交信息格式 **`【动作】模块 - 内容概述`**（动作两字为主：新增 / 修改 / 修复 / 移除 / 重构 / 优化；模块如 `server` / `web` / `e2e` / `文档` / `工程化` / 业务模块名）
+- **编辑器一致性**：`.editorconfig`（缩进 / 换行 / 文件末尾）+ `.vscode/settings.json`（保存即 ESLint 自动修复、LF 统一）
+- **测试分层**：单元测试（server Jest / web Vitest，`*.spec.ts` 与源码同目录）→ 后端 API e2e（`server/test/`，supertest，DataSource 打桩）→ 浏览器全链路 e2e（`e2e/`，Playwright）；**写不写、写到什么程度按风险分级取舍，不逐文件配 spec**，细则见 [rules/testing.md](rules/testing.md)
+- **完成定义**：改动完成的标志是根目录 `pnpm check` 全绿（详见 [rules/base.md](rules/base.md)）
+
+### 后端（server/）
+
+- **配置**：环境变量（`.env`，模板 `.env.example`）→ `src/config/configuration.ts` 汇总 → `ConfigService` 读取。业务代码**不直接读 `process.env`**
+- **数据库**：`TypeOrmModule.forRootAsync` 装配；`autoLoadEntities: true` —— 新实体只需在业务模块中 `forFeature([...])` 注册；`DB_SYNC=true`（仅开发）自动同步表结构，生产必须关闭。默认与首选 PostgreSQL，TypeORM 支持所有主流与部分国产化数据库，可按项目需要切换（`server/.env` 的 `DB_TYPE` 与连接参数 + 安装对应驱动）
+- **业务模块**：按领域放 `server/src/modules/<领域>/`，生成骨架：`pnpm --filter server exec nest g resource modules/<领域>`
+- **全局设施**（main.ts）：路由前缀 `/api`、ValidationPipe（transform + whitelist + forbidNonWhitelisted）、CORS、Swagger（`SWAGGER_ENABLED` 控制）
+- **测试**：Jest。单元测试与源码同目录（`*.spec.ts`）；e2e 在 `test/`，通过 `overrideProvider(getDataSourceToken())` 打桩跳过真实数据库
+
+### 前端（web/）
+
+- 入口 `src/main.ts`：装配 Pinia、Router、Element Plus（中文 locale，全量引入）
+- **API 调用统一走 `src/api/http.ts` 的 axios 实例**（baseURL 来自 `VITE_API_BASE_URL`），组件内不直接创建 axios
+- 状态按领域拆分至 `src/stores/`；路由在 `src/router/index.ts`，`RouteMeta.title` 自动写入页面标题
+- `@` 别名指向 `src/`；TypeScript 项目引用结构（tsconfig.app / tsconfig.node），类型检查用 `vue-tsc --build`
+- 单元测试用 Vitest（配置内嵌 `vite.config.ts` 的 `test` 字段，用例与源码同目录 `*.spec.ts`）
+
+### 代码规范
+
+**风格细则见 [rules/code-style.md](rules/code-style.md)，由 ESLint（`@stylistic` + `import-x`）强制，改完代码运行 `pnpm lint` 自动修复。** 要点：结尾无分号、字符串单引号、2 空格缩进、import 分组排序、多行保留尾逗号；**后端日志必须用 Nest `Logger`**（`console.*` 被 lint 禁止）；前端开发期允许 `console.warn`/`console.error`。
+
+- ESLint 9 扁平配置：server 为 typescript-eslint 类型感知检查；web 为 eslint-plugin-vue + typescript-eslint
+- 修改文件时保留原头部注释中的作者与创建时间，不据为己有

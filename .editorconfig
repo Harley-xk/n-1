@@ -1,0 +1,19 @@
+# 编辑器一致性配置：统一缩进、换行符与文件末尾行为，覆盖所有编辑器（VS Code 需安装 EditorConfig 扩展）
+# 换行符策略与根 .gitattributes 保持一致：文本一律 LF，Windows 脚本 CRLF
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.md]
+# Markdown 行尾双空格是换行语义，不去除
+trim_trailing_whitespace = false
+
+[*.{bat,cmd,ps1}]
+# Windows 批处理 / PowerShell 脚本保持 CRLF
+end_of_line = crlf

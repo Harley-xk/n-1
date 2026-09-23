@@ -1,0 +1,26 @@
+{
+  // 显式声明包含范围：src 源码 + test e2e，让 spec 文件的项目归属无歧义
+  // （tsconfig.build.json 排除 test 与 spec 仅供构建，两者互补而非冲突）
+  "include": ["src/**/*", "test/**/*"],
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "sourceMap": true,
+    "outDir": "./dist",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "types": ["node", "jest"],
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}

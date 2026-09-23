@@ -1,0 +1,26 @@
+{
+  "name": "n-1",
+  "version": "0.1.0",
+  "private": true,
+  "description": "n-1 —— 企业级全栈项目框架底座，面向 vibe coding first 的 AI 编程范式（Monorepo）",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "dev:server": "pnpm --filter server run dev",
+    "dev:web": "pnpm --filter web run dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm --filter server run test && pnpm --filter web run test",
+    "test:e2e": "pnpm --filter server run test:e2e",
+    "test:e2e:web": "pnpm --filter e2e run test",
+    "check": "pnpm lint && pnpm type-check && pnpm test && pnpm test:e2e",
+    "lint": "pnpm -r run lint",
+    "type-check": "pnpm -r run type-check",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "lefthook": "^2.1.12"
+  }
+}
