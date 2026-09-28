@@ -27,12 +27,17 @@ import { RoleEntity } from './entities/role.entity'
 import { UserPostEntity } from './entities/user-post.entity'
 import { UserRoleEntity } from './entities/user-role.entity'
 import { UserEntity } from './entities/user.entity'
+import { LoginLogController } from './login-log/login-log.controller'
+import { LoginLogService } from './login-log/login-log.service'
+import { OperateLogController } from './operate-log/operate-log.controller'
+import { OperateLogService } from './operate-log/operate-log.service'
 import { PermissionService } from './permission.service'
 import { PermissionRegistry } from './permissions'
 import { RoleController } from './role/role.controller'
 import { RoleService } from './role/role.service'
 import { UserController } from './user/user.controller'
 import { UserService } from './user/user.service'
+import { AsyncTaskQueue } from '../../common/async/async-task-queue'
 import { DEFAULT_JWT_SECRET } from '../../config/configuration'
 
 @Global()
@@ -65,10 +70,20 @@ import { DEFAULT_JWT_SECRET } from '../../config/configuration'
       }),
     }),
   ],
-  controllers: [AuthController, UserController, RoleController],
-  providers: [AuthService, UserService, RoleService, PermissionService, PermissionRegistry],
-  // 导出供全局 Guard（APP_GUARD 在根模块实例化）解析依赖，形态同 SignatureModule 先例
-  exports: [AuthService, PermissionService, PermissionRegistry],
+  controllers: [AuthController, UserController, RoleController, OperateLogController, LoginLogController],
+  providers: [
+    AuthService,
+    UserService,
+    RoleService,
+    PermissionService,
+    PermissionRegistry,
+    // 异步任务队列：日志异步入库的消费通道（@Global 导出，供认证服务与根作用域的操作日志拦截器注入）
+    AsyncTaskQueue,
+    OperateLogService,
+    LoginLogService,
+  ],
+  // 导出供全局 Guard / 拦截器（APP_GUARD / APP_INTERCEPTOR 在根模块实例化）解析依赖，形态同 SignatureModule 先例
+  exports: [AuthService, PermissionService, PermissionRegistry, AsyncTaskQueue, OperateLogService],
 })
 export class SystemModule implements OnModuleInit {
   private readonly logger = new Logger(SystemModule.name)

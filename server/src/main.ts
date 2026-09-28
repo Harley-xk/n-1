@@ -34,6 +34,10 @@ async function bootstrap() {
   // 允许跨域（开发阶段前端 5173 端口访问后端 3000 端口）
   app.enableCors()
 
+  // 启用关停钩子：SIGTERM / app.close() 时触发各 provider 的 onApplicationShutdown
+  // （异步任务队列借此拒绝新任务并排空存量，见 common/async/async-task-queue.ts）
+  app.enableShutdownHooks()
+
   // Swagger 接口文档，通过 SWAGGER_ENABLED 环境变量控制开关
   if (configService.get<boolean>('swaggerEnabled')) {
     const swaggerConfig = new DocumentBuilder()

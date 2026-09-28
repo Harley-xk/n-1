@@ -7,6 +7,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 
+import { OperateLog } from '../../../common/decorators/operate-log.decorator'
 import type { PageResult } from '../../../common/interfaces/page-result.interface'
 import { SYSTEM_PERMISSION_CODES } from '../permissions'
 import { RequirePermissions } from '../permissions'
@@ -35,6 +36,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: '创建用户' })
+  @OperateLog('用户管理', '创建用户')
   @RequirePermissions(SYSTEM_PERMISSION_CODES.USER_CREATE)
   @Post('create')
   async create(@Body() dto: UserCreateDto): Promise<string> {
@@ -42,6 +44,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: '更新用户' })
+  @OperateLog('用户管理', '更新用户')
   @RequirePermissions(SYSTEM_PERMISSION_CODES.USER_UPDATE)
   @Put('update')
   async update(@Body() dto: UserUpdateDto): Promise<void> {
@@ -49,6 +52,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: '删除用户' })
+  @OperateLog('用户管理', '删除用户')
   @RequirePermissions(SYSTEM_PERMISSION_CODES.USER_DELETE)
   @Delete('delete/:id')
   async remove(@Param('id') id: string): Promise<void> {
@@ -56,6 +60,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: '重置密码（恢复默认初始口令）' })
+  @OperateLog('用户管理', '重置密码')
   @RequirePermissions(SYSTEM_PERMISSION_CODES.USER_RESET_PASSWORD)
   @Put('reset-password')
   async resetPassword(@Body() dto: UserResetPasswordDto): Promise<void> {
@@ -63,6 +68,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: '分配角色（差集增量绑定）' })
+  @OperateLog('用户管理', '分配角色')
   @RequirePermissions(SYSTEM_PERMISSION_CODES.USER_UPDATE)
   @Put('assign-role')
   async assignRoles(@Body() dto: UserAssignRoleDto): Promise<void> {

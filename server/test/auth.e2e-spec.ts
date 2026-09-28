@@ -7,14 +7,17 @@ import request from 'supertest'
 
 import { AppModule } from '../src/app.module'
 import { dataSourceStub } from './support/data-source-stub'
+import { AsyncTaskQueue } from '../src/common/async/async-task-queue'
 import type { ApiResponse } from '../src/common/interfaces/api-response.interface'
 import type { PermissionInfoVo } from '../src/modules/system/auth/dto/permission-info.dto'
+import { LoginLogEntity } from '../src/modules/system/entities/login-log.entity'
 import { RolePermissionEntity } from '../src/modules/system/entities/role-permission.entity'
 import { RoleEntity } from '../src/modules/system/entities/role.entity'
 import { UserRoleEntity } from '../src/modules/system/entities/user-role.entity'
 import { UserEntity } from '../src/modules/system/entities/user.entity'
 import { SystemErrorCode } from '../src/modules/system/error-codes'
 import { SYSTEM_PERMISSION_CODES } from '../src/modules/system/permissions'
+import { LOGIN_LOG_TYPE_LOGIN, LOGIN_LOG_TYPE_LOGOUT } from '../src/modules/system/system.constants'
 
 // 环境变量须在 TestingModule 构建前设置（configuration 工厂在模块初始化时执行；
 // Jest 按测试文件分进程运行，与其他套件的环境变量互不影响）
@@ -74,10 +77,26 @@ function makeRolePermissionRepository() {
   }
 }
 
+/** 登录日志捕获桩：异步入库落到内存数组，drain 后断言埋点形态（不查库） */
+const loginLogs: Partial<LoginLogEntity>[] = []
+function makeLoginLogRepository() {
+  return {
+    insert: (entity: Partial<LoginLogEntity>) => {
+      loginLogs.push(entity)
+      return Promise.resolve({})
+    },
+  }
+}
+
 describe('Auth (e2e)', () => {
   let app: INestApplication
   let server: Server
   let adminToken: string
+
+  /** 排空异步任务队列：登录/登出日志经 AsyncTaskQueue 异步入库，断言前必须等待落桩 */
+  async function drainLogQueue(): Promise<void> {
+    await app.get(AsyncTaskQueue).drain()
+  }
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
@@ -93,6 +112,8 @@ describe('Auth (e2e)', () => {
       .useValue(makeUserRoleRepository())
       .overrideProvider(getRepositoryToken(RolePermissionEntity))
       .useValue(makeRolePermissionRepository())
+      .overrideProvider(getRepositoryToken(LoginLogEntity))
+      .useValue(makeLoginLogRepository())
       .compile()
 
     app = moduleFixture.createNestApplication({ rawBody: true })
@@ -123,17 +144,35 @@ describe('Auth (e2e)', () => {
     expect(typeof body.data?.token).toBe('string')
     expect(body.data?.token.length).toBeGreaterThan(0)
     adminToken = body.data!.token
+    // 异步埋点契约：成功登录应落一条 logType 10 / resultCode 0 的登录日志
+    await drainLogQueue()
+    expect(loginLogs).toContainEqual(
+      expect.objectContaining({
+        logType: LOGIN_LOG_TYPE_LOGIN,
+        userId: ADMIN_ID,
+        username: 'admin',
+        resultCode: 0,
+      }),
+    )
   })
 
-  it('口令错误应返回 400 与同码业务错误（防账号枚举契约）', () => {
-    return request(server)
+  it('口令错误应返回 400 与同码业务错误（防账号枚举契约）', async () => {
+    const res = await request(server)
       .post('/api/system/auth/login')
       .send({ username: 'admin', password: 'wrong-password' })
       .expect(400)
-      .expect((res) => {
-        const body = res.body as ApiResponse
-        expect(body.code).toBe(SystemErrorCode.AUTH_LOGIN_FAILED.code)
-      })
+    const body = res.body as ApiResponse
+    expect(body.code).toBe(SystemErrorCode.AUTH_LOGIN_FAILED.code)
+    // 异步埋点契约：失败登录应落 userId null + 业务失败码
+    await drainLogQueue()
+    expect(loginLogs).toContainEqual(
+      expect.objectContaining({
+        logType: LOGIN_LOG_TYPE_LOGIN,
+        userId: null,
+        username: 'admin',
+        resultCode: SystemErrorCode.AUTH_LOGIN_FAILED.code,
+      }),
+    )
   })
 
   it('登录接口豁免签名校验（未携带签名头仍可到达业务逻辑）', () => {
@@ -199,14 +238,22 @@ describe('Auth (e2e)', () => {
       })
   })
 
-  it('logout 应返回 200 统一包装结构（无状态 JWT 占位接口）', () => {
-    return request(server)
+  it('logout 应返回 200 统一包装结构并埋登出日志', async () => {
+    const res = await request(server)
       .post('/api/system/auth/logout')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200)
-      .expect((res) => {
-        const body = res.body as ApiResponse<unknown>
-        expect(body.code).toBe(0)
-      })
+    const body = res.body as ApiResponse<unknown>
+    expect(body.code).toBe(0)
+    // 异步埋点契约：登出应落一条 logType 20 的登录日志
+    await drainLogQueue()
+    expect(loginLogs).toContainEqual(
+      expect.objectContaining({
+        logType: LOGIN_LOG_TYPE_LOGOUT,
+        userId: ADMIN_ID,
+        username: 'admin',
+        resultCode: 0,
+      }),
+    )
   })
 })
