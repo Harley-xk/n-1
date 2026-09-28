@@ -8,6 +8,7 @@ import request from 'supertest'
 
 import { AppModule } from '../src/app.module'
 import { dataSourceStub } from './support/data-source-stub'
+import { Public } from '../src/common/decorators/public.decorator'
 import { businessError } from '../src/common/exceptions/business-error'
 import type { ApiResponse } from '../src/common/interfaces/api-response.interface'
 
@@ -18,7 +19,8 @@ class DemoDto {
   name!: string
 }
 
-/** 临时演示控制器：仅在测试内注册，验证异常真链路（业务代码零污染） */
+/** 临时演示控制器：仅在测试内注册，验证异常真链路（业务代码零污染；@Public 豁免 JWT） */
+@Public()
 @Controller('exception-demo')
 class ExceptionDemoController {
   @Get('business')

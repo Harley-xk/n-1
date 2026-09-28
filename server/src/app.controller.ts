@@ -9,7 +9,10 @@ import { Controller, Get } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 
 import { AppService } from './app.service'
+import { Public } from './common/decorators/public.decorator'
 
+// 公开接口：健康检查是部署探测 / e2e 拉起验证的目标，欢迎页为链路连通性演示，均须匿名可达
+@Public()
 @ApiTags('应用')
 @Controller()
 export class AppController {

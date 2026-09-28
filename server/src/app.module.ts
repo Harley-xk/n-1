@@ -24,6 +24,9 @@ import { SignatureGuard } from './common/signature/signature.guard'
 import { SignatureModule } from './common/signature/signature.module'
 import { AuditSubscriber } from './common/subscribers/audit.subscriber'
 import configuration from './config/configuration'
+import { JwtAuthGuard } from './modules/system/guards/jwt-auth.guard'
+import { PermissionsGuard } from './modules/system/guards/permissions.guard'
+import { SystemModule } from './modules/system/system.module'
 
 @Module({
   imports: [
@@ -68,6 +71,8 @@ import configuration from './config/configuration'
     }),
     // 签名机制：全局模块，提供方案注册表 / nonce 存储，并在启动期做密钥 fail-fast 校验
     SignatureModule,
+    // 系统管理：认证 / 用户 / 角色 + 权限注册表（全局模块，导出 Guard 依赖的服务）
+    SystemModule,
   ],
   controllers: [AppController],
   providers: [
@@ -78,6 +83,10 @@ import configuration from './config/configuration'
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
     // 全局签名守卫：写方法请求签名校验（开关/豁免/自定义方案见 docs/指南/请求签名验证设计.md），同上注册
     { provide: APP_GUARD, useClass: SignatureGuard },
+    // 全局 JWT 认证守卫：@Public 豁免 → Bearer 解析 → 用户存在性校验（ADR-003），排在签名之后（签名是外层防线）
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // 全局权限守卫：@RequirePermissions 逐请求现查权限集合（无注解 = 仅需登录），排在认证之后
+    { provide: APP_GUARD, useClass: PermissionsGuard },
     AppService,
   ],
 })

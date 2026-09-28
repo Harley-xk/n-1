@@ -8,6 +8,7 @@ import request from 'supertest'
 import { AppModule } from '../src/app.module'
 import { dataSourceStub } from './support/data-source-stub'
 import { E2E_SIGN_SECRET, signHeaders, signedRequest } from './support/signature.helper'
+import { Public } from '../src/common/decorators/public.decorator'
 import type { ApiResponse } from '../src/common/interfaces/api-response.interface'
 import { SkipSignature } from '../src/common/signature/decorators/skip-signature.decorator'
 import { UseSignature } from '../src/common/signature/decorators/use-signature.decorator'
@@ -33,7 +34,8 @@ class DemoSignatureScheme implements SignatureScheme {
   }
 }
 
-/** 临时演示控制器：仅在测试内注册，验证签名真链路（业务代码零污染） */
+/** 临时演示控制器：仅在测试内注册，验证签名真链路（业务代码零污染；@Public 豁免 JWT） */
+@Public()
 @Controller('signature-demo')
 class SignatureDemoController {
   @Post('standard')
