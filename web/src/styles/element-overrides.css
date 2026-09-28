@@ -1,0 +1,114 @@
+/*
+ * Element Plus 主题覆写：--el-* 变量对齐 --n1-* 设计 token（明暗双套，不引入 sass）
+ * 主色刻度为硬编码计算值（浅色混白 / 深色混黑），不使用 color-mix——保持无 sass 依赖的纯 CSS 变量方案
+ */
+
+:root {
+  /* 主色与刻度（基色 #0D9488） */
+  --el-color-primary: var(--n1-color-primary);
+  --el-color-primary-light-3: #56b4ac;
+  --el-color-primary-light-5: #86cac4;
+  --el-color-primary-light-7: #b6dfdb;
+  --el-color-primary-light-8: #cfeae7;
+  --el-color-primary-light-9: #e8f4f3;
+  --el-color-primary-dark-2: #0a766d;
+
+  /* 通用 */
+  --el-border-radius-base: 6px;
+  --el-font-family: var(--n1-font-family);
+  --el-text-color-primary: var(--n1-text-1);
+  --el-text-color-regular: var(--n1-text-2);
+  --el-border-color: var(--n1-border);
+  --el-border-color-light: var(--n1-border);
+  --el-border-color-lighter: var(--n1-divider);
+  --el-fill-color-light: var(--n1-fill-hover);
+  --el-bg-color: var(--n1-card-bg);
+  --el-bg-color-overlay: var(--n1-card-bg);
+
+  /* 主按钮：悬停加深（浅色）/ 提亮（深色），跟随 --n1-color-primary-hover 双态 */
+  --el-button-hover-bg-color: var(--n1-color-primary-hover);
+
+  /* 弹窗与浮层 */
+  --el-dialog-border-radius: 10px;
+  --el-popper-border-radius: 8px;
+
+  /* 侧边菜单（白卡片内，舒适行高与左右间距） */
+  --el-menu-bg-color: transparent;
+  --el-menu-border-color: transparent;
+  --el-menu-text-color: var(--n1-text-2);
+  --el-menu-hover-bg-color: var(--n1-fill-hover);
+  --el-menu-active-color: var(--n1-color-primary);
+  --el-menu-item-height: 44px;
+  --el-menu-sub-item-height: 42px;
+  --el-menu-base-level-padding: 12px;
+}
+
+/*
+ * 表格（浅底表头 + 中性边框）
+ * EP 在 .el-table 组件元素上局部定义 --el-table-* 变量，th 经继承取最近层定义，
+ * :root 层覆盖会被遮蔽——必须同在 .el-table 层覆盖（表头底色取 token，明暗自动翻转）
+ */
+.el-table {
+  --el-table-header-bg-color: var(--n1-table-header-bg);
+  --el-table-header-text-color: var(--n1-text-2);
+  --el-table-border-color: var(--n1-border);
+}
+
+html.dark {
+  /* 主色提亮为 #14B8A6 后的刻度（深色下向黑混合，对齐 EP dark 约定） */
+  --el-color-primary-light-3: #0e8174;
+  --el-color-primary-light-5: #0a5c53;
+  --el-color-primary-light-7: #063732;
+  --el-color-primary-light-8: #042521;
+  --el-color-primary-light-9: #021211;
+  --el-color-primary-dark-2: #43c6b8;
+
+  /* 深色下主按钮悬停改提亮，覆盖上面的通用映射 */
+  --el-button-hover-bg-color: var(--n1-color-primary-hover);
+}
+
+/* 菜单激活项：主色浅底圆角块 */
+.el-menu-item.is-active {
+  background-color: var(--n1-color-primary-bg-light);
+  border-radius: 6px;
+}
+
+/* 收起态弹出子菜单里的激活项不带浅底块（浮层内以文字色区分） */
+.el-menu--vertical .el-menu-item.is-active {
+  background-color: transparent;
+}
+
+/* 主按钮悬停 / 按下边框跟随 token（EP 默认取 light-3 / dark-2 刻度） */
+.el-button--primary {
+  --el-button-hover-border-color: var(--n1-color-primary-hover);
+  --el-button-active-bg-color: var(--n1-color-primary-active);
+  --el-button-active-border-color: var(--n1-color-primary-active);
+}
+
+/* 表头字重与行高（舒适密度） */
+.el-table th.el-table__cell {
+  font-weight: 500;
+}
+
+.el-table .el-table__cell {
+  padding: 10px 0;
+}
+
+/* 滚动条：6px 扁平半透明 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: rgba(148, 163, 184, 0.35);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+}

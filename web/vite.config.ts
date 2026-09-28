@@ -1,7 +1,8 @@
+/// <reference types="vitest/config" />
 // Vite 构建与 Vitest 测试配置：@ 路径别名、开发服务器端口与 /api 后端代理
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({

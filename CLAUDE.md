@@ -14,6 +14,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 当前状态
 
+**前端门面（批次三）已完成**（2026-09-28，设计见 [docs/规划/批次三-前端门面设计.md](docs/规划/批次三-前端门面设计.md)，视觉细则见 [布局与风格设计](docs/前端/布局与风格设计.md)）：主布局系统落地（顶栏一整条 / 白卡片侧栏可收起 / 标签栏 / 连体白卡片内容区唯一滚动容器）；`--n1-*` 设计 token 明暗双套 + 三态主题（浅 / 深 / 跟随系统）+ 992px 断点自动收起；多标签页（fullPath 一签、右键批量关闭、redirect 中转刷新、N1_TAGS 持久化恢复、keep-alive 缓存跟随页签）；组件槽位注册表（6 槽位，业务 `registerComponentOverride` 覆盖）；工具件（storage / menu-icon / format / menu）。**视觉差异化定稿「青碧卡片浮起」**（主色 #0D9488、近纯色浅灰画布、白卡片分区、10px 圆角、舒适密度，不与 n-2 视觉同质）。web 依赖升至 n-2 同代：vue-router 5 / pinia 4 / vite 8 / TS 6 / ESLint 10 / vue-tsc 3（ESLint 10 下 plugin-vue 须以 parser 方式接入、TS 6 用自写 tsconfig，均照 n-2 验证形态；根级 ESLint 9 供 server lint 链路不动）。路由 name 升 **PascalCase**（keep-alive 缓存键契约：路由 name ↔ 页面 `defineOptions({ name })` ↔ 缓存名单）；侧栏菜单由 Layout 静态子路由树生成（`utils/menu.ts`，ADR-001 落地，批次四在此层加权限过滤）。新增「组件演示」两页（缓存 / 页签演示，批次六由样板模块吸收）。`pnpm check` 全绿、浏览器 e2e 9 用例通过（存量 3 零回归 + 新增 6）。
+
 **数据层基建已完成**（2026-09-28，设计见 [docs/规划/批次二-数据层基建设计.md](docs/规划/批次二-数据层基建设计.md)，批次规划见 [n-2 消化吸收规划](docs/规划/n-2消化吸收规划.md)）：审计公共实体 `BaseEntity`（uuid 主键 + timestamptz 审计列 + TypeORM 原生软删，ADR-004 实施，业务实体一律继承）；请求上下文（AsyncLocalStorage 中间件）+ `AuditSubscriber` 审计自动填充（creator / updater，批次四接 JWT 后由 Guard 激活）；蛇形命名策略（自写 `SnakeNamingStrategy`）；TypeORM 迁移体系落地（`server/src/data-source.ts` + `migration:generate / run / revert` 三命令 + 空基线 `InitialBaseline`，ADR-005 实施）；`DB_SYNC` 生产强制关闭并告警；建表类型规约（PG 优先版：uuid / boolean / timestamptz / numeric）并入架构文档。新增 `dotenv` 一项事实依赖（迁移 CLI 读 `.env`）。`pnpm check` 全绿、浏览器 e2e 不回归（后端真实拉起验证装配正常）。**待办**：真库迁移闭环因本机库账号无建表权未跑，授权 SQL 见批次二设计文档 §5。
 
 **工程化快赢与契约定稿已完成**（2026-09-28，设计见 [docs/规划/批次一-工程化快赢与契约定稿.md](docs/规划/批次一-工程化快赢与契约定稿.md)）：错误码升级为九位分段体系（模块 / 子域 / 序号各 3 位，通用段数值等于 HTTP 语义码，`BusinessError` 默认未分类业务码 999，前端判定改 `code !== 0`，ADR-002 实施定稿）；新增请求访问日志（含业务 code 回填）与安全响应头两个中间件；web vitest 切 jsdom + `@vue/test-utils`（组件测试链路解锁）；prettier + lint-staged 落地（ts/vue 归 ESLint，prettier 只兜 CSS）；浏览器 e2e 升级双 webServer（后端可拉起性探测自动拉起，无库环境回退为跳过）。`pnpm check` 全绿、浏览器 e2e 不回归，存量契约零破坏（404/401 等框架级 code 数值不变）。
@@ -84,10 +86,11 @@ VS Code 调试：`.vscode/launch.json` 提供三个一键配置（仅前端 / �
 
 ### 前端（web/）
 
-- 入口 `src/main.ts`：装配 Pinia、Router、Element Plus（中文 locale，全量引入）
+- 入口 `src/main.ts`：装配 Pinia、路由守卫、Element Plus（中文 locale，全量引入 + 暗色 css-vars）
+- **主布局 `src/layouts/default/`**（顶栏 / 侧栏 / 标签栏 / 内容卡片）+ **槽位注册表 `src/framework/slots/`**（业务覆盖机制），设计与视觉 token 见 [布局与风格设计](docs/前端/布局与风格设计.md)；业务组件只消费 `--n1-*` token，不硬编码色值
 - **API 调用统一走 `src/api/http.ts` 的 axios 实例**（baseURL 来自 `VITE_API_BASE_URL`），组件内不直接创建 axios
-- 状态按领域拆分至 `src/stores/`；路由在 `src/router/index.ts`，`RouteMeta.title` 自动写入页面标题
-- `@` 别名指向 `src/`；TypeScript 项目引用结构（tsconfig.app / tsconfig.node），类型检查用 `vue-tsc --build`
+- 状态按领域拆分至 `src/stores/`（app 外观 / tags-view 多标签）；路由在 `src/router/index.ts` 静态注册（菜单由 Layout 子路由树生成，ADR-001），守卫在 `router/guard.ts`；**路由 name 一律 PascalCase**（keep-alive 缓存键契约）
+- `@` 别名指向 `src/`；TypeScript 项目引用结构（自写 tsconfig.app / tsconfig.node），类型检查用 `vue-tsc --build`
 - 单元测试用 Vitest（jsdom 环境 + `@vue/test-utils` 支持组件测试；配置内嵌 `vite.config.ts` 的 `test` 字段，用例与源码同目录 `*.spec.ts`）
 
 ### 代码规范

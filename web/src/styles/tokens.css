@@ -1,0 +1,76 @@
+/*
+ * 设计 token（--n1-*）：明暗双套，全部视觉常量的唯一出处
+ * 业务组件只允许消费 token，不允许硬编码色值（见 docs/前端/布局与风格设计.md §6）
+ * 视觉方案「青碧卡片浮起」：近纯色浅灰画布 + 白色卡片分区 + 青碧主色 + 10px 圆角 + 舒适密度
+ */
+
+/* ============ 浅色（默认） ============ */
+:root {
+  /* 主色（青碧 teal-600 单主色贯穿） */
+  --n1-color-primary: #0d9488;
+  --n1-color-primary-hover: #0f766e;
+  --n1-color-primary-active: #115e59;
+  --n1-color-primary-bg-light: #d6f0ec;
+
+  /* 画布：近纯色浅冷灰（不做渐变，卡片以边框 + 阴影定界） */
+  --n1-canvas: #f3f5f7;
+
+  /* 卡片（侧栏独立卡片 / 标签栏与内容卡连体，均为白底 + 1px 边框 + 浅阴影） */
+  --n1-card-bg: #ffffff;
+  --n1-card-border: #e5e9ee;
+  --n1-card-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --n1-table-header-bg: #f7f9fa;
+
+  /* 文字 */
+  --n1-text-1: #1f2733;
+  --n1-text-2: #5b6878;
+  --n1-text-3: #98a2b3;
+
+  /* 边框 / 分割 / 填充 */
+  --n1-border: #e2e8f0;
+  --n1-divider: #edf1f5;
+  --n1-fill-hover: #f1f5f9;
+
+  /* 弹层阴影 */
+  --n1-shadow-popup: 0 8px 24px rgba(15, 23, 42, 0.12);
+
+  /* 布局尺寸（舒适型密度） */
+  --n1-header-height: 56px;
+  --n1-sidebar-width: 220px;
+  --n1-sidebar-width-collapsed: 48px;
+  --n1-tags-bar-height: 38px;
+
+  /* 圆角 */
+  --n1-radius: 10px;
+  --n1-radius-small: 6px;
+
+  /* 字体栈 */
+  --n1-font-family:
+    system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+/* ============ 深色 ============ */
+html.dark {
+  /* 青碧 teal-600 在深底可读性不足，暗色下提亮一档 */
+  --n1-color-primary: #14b8a6;
+  --n1-color-primary-hover: #2dd4bf;
+  --n1-color-primary-active: #5eead4;
+  --n1-color-primary-bg-light: rgba(20, 184, 166, 0.16);
+
+  --n1-canvas: #101318;
+
+  --n1-card-bg: #1a1d23;
+  --n1-card-border: #2a2f3a;
+  --n1-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --n1-table-header-bg: #22262e;
+
+  --n1-text-1: #e7ebf0;
+  --n1-text-2: #a6b0c0;
+  --n1-text-3: #6b7688;
+
+  --n1-border: #2a2f3a;
+  --n1-divider: #242932;
+  --n1-fill-hover: rgba(255, 255, 255, 0.05);
+
+  --n1-shadow-popup: 0 8px 24px rgba(0, 0, 0, 0.45);
+}

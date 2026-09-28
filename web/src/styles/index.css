@@ -1,0 +1,66 @@
+/*
+ * 全局基础样式：reset / 画布 / 页面容器与卡片扁平化
+ * 设计 token 见 tokens.css，Element Plus 主题覆写见 element-overrides.css
+ */
+@import "./tokens.css";
+@import "./element-overrides.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--n1-font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  color: var(--n1-text-1);
+  /* 画布：全应用底（顶栏透明浮于其上，侧栏与内容区为独立白卡片） */
+  background: var(--n1-canvas) fixed;
+}
+
+/* 页面通用容器：内容卡片内边距 */
+.page-container {
+  padding: 16px;
+}
+
+/* 查询区与表格区的纵向间距 */
+.table-card {
+  margin-top: 12px;
+}
+
+/*
+ * 内容卡片内的 el-card 自动扁平化：
+ * 白卡片上的卡片去底色 / 边框 / 阴影，区块间以分割线区分（页面零模板改动）
+ */
+.n1-content-card .el-card {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 0;
+}
+
+.n1-content-card .el-card + .el-card {
+  margin-top: 8px;
+  border-top: 1px solid var(--n1-divider);
+}
+
+/* 需要保留卡片形态的页面（如概览大卡）加该类还原 */
+.n1-page-card .el-card {
+  border: 1px solid var(--n1-border);
+  box-shadow: var(--n1-card-shadow);
+  background: var(--n1-card-bg);
+  border-radius: var(--n1-radius);
+}
+
+.n1-page-card .el-card + .el-card {
+  margin-top: 0;
+  border-top: 1px solid var(--n1-border);
+}

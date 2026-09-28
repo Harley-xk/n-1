@@ -17,33 +17,32 @@
     "lint:staged": "lint-staged"
   },
   "dependencies": {
-    "@element-plus/icons-vue": "^2.3.1",
+    "@element-plus/icons-vue": "^2.3.2",
     "@noble/hashes": "^2.4.0",
     "axios": "^1.7.9",
-    "element-plus": "^2.9.1",
-    "pinia": "^3.0.1",
-    "vue": "^3.5.13",
-    "vue-router": "^4.5.0"
+    "element-plus": "^2.14.5",
+    "pinia": "^4.0.3",
+    "vue": "^3.5.42",
+    "vue-router": "^5.3.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.18.0",
     "@stylistic/eslint-plugin": "^5.10.0",
-    "@tsconfig/node22": "^22.0.0",
-    "@types/node": "^22.10.5",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@types/node": "^22.20.3",
+    "@vitejs/plugin-vue": "^6.0.9",
     "@vue/test-utils": "^2.5.1",
-    "@vue/tsconfig": "^0.7.0",
-    "eslint": "^9.18.0",
+    "eslint": "^10.10.0",
     "eslint-plugin-import-x": "^4.17.1",
-    "eslint-plugin-vue": "^9.32.0",
+    "eslint-plugin-vue": "^10.11.0",
+    "globals": "^17.12.0",
     "jsdom": "^30.1.1",
     "lint-staged": "^17.6.0",
     "npm-run-all2": "^7.0.2",
     "prettier": "^3.9.9",
-    "typescript": "~5.7.3",
-    "typescript-eslint": "^8.20.0",
-    "vite": "^6.0.7",
-    "vitest": "^5.0.0",
-    "vue-tsc": "^2.2.0"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.0",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1",
+    "vue-eslint-parser": "^10.4.1",
+    "vue-tsc": "^3.3.11"
   }
 }
