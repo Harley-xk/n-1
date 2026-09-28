@@ -21,9 +21,9 @@ export default defineConfig({
       },
     },
   },
-  // Vitest 单元测试：store / 纯函数用 node 环境；组件测试需要时可切换为 happy-dom
+  // Vitest 单元测试：jsdom 环境支持组件测试（@vue/test-utils），store / 纯函数用例同样兼容
   test: {
-    environment: 'node',
+    environment: 'jsdom',
     include: ['src/**/*.spec.ts'],
   },
 })

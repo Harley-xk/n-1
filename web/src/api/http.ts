@@ -12,7 +12,7 @@ import { SIGNATURE_WRITE_METHODS, isSignableData, resolveSignPath, serializeBody
 
 /** 统一响应结构（与 server/src/common/interfaces/api-response.interface.ts 保持同步维护） */
 export interface ApiResponse<T = unknown> {
-  /** 业务状态码：>=0 成功（默认 0，预留正数扩展位）；<0 业务错误（默认 -1，预留负数扩展位） */
+  /** 业务状态码：0 成功；非 0 为九位分段错误码（模块 3 位 + 子域 3 位 + 序号 3 位） */
   code: number
   /** 提示信息：错误时必有 */
   message?: string
@@ -59,8 +59,8 @@ http.interceptors.response.use(
       return response
 
     const body = response.data as ApiResponse
-    // HTTP 2xx 但 code < 0 的防御性兜底（符号判定，不写死具体值）
-    if (body.code < 0) {
+    // HTTP 2xx 但 code 非 0 的防御性兜底（分段错误码全为正整数，成功码 0 是唯一成功值）
+    if (body.code !== 0) {
       const message = body.message || '请求失败'
       ElMessage.error(message)
       return Promise.reject(new Error(message))

@@ -7,10 +7,12 @@
 
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common'
 import { Catch, HttpException, Logger } from '@nestjs/common'
-import type { Response } from 'express'
+import type { Request, Response } from 'express'
 
+import { GlobalErrorCode } from '../errors/error-code'
 import { BusinessError } from '../exceptions/business-error'
 import type { ApiResponse } from '../interfaces/api-response.interface'
+import { setResponseCode } from '../utils/response-code'
 
 /** 全局异常过滤器：失败路径的统一出口 */
 @Catch()
@@ -19,15 +21,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>()
+    const request = host.switchToHttp().getRequest<Request>()
 
     let status = 500
-    let code = -1
+    let code = GlobalErrorCode.INTERNAL_SERVER_ERROR.code
     let message = '服务器内部错误'
     let data: unknown
 
     if (exception instanceof HttpException) {
-      // Nest 内置异常（路由 404、鉴权 401、DTO 校验 400 等）：code 取 HTTP 状态码数值，
-      // 仅为参考标识——此类响应必伴随 4xx/5xx，前端以 HTTP 状态码判定失败
+      // Nest 内置异常（路由 404、鉴权 401、DTO 校验 400 等）：
+      // code 取通用段分段码（模块/子域段为 0，数值上等于 HTTP 状态码本身，
+      // 便于排查对读），仅为参考标识——此类响应必伴随 4xx/5xx，前端以 HTTP 状态码判定失败
       status = exception.getStatus()
       code = status
       const payload = exception.getResponse() as Record<string, unknown> | string
@@ -48,6 +52,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
       // 未知异常：原始消息与堆栈只写服务端日志，客户端仅收中文化兜底提示，不泄漏内部细节
       this.logger.error(exception.message, exception.stack)
     }
+
+    // 回填业务响应码供访问日志读取（响应流式写出后无法再取响应体）
+    setResponseCode(request, code)
 
     const body: ApiResponse<unknown> = { code, message, data }
     response.status(status).json(body)

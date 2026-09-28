@@ -1,0 +1,4 @@
+{
+  "*.{js,mjs,cjs,ts,vue}": ["eslint --fix"],
+  "*.css": ["prettier --write"]
+}

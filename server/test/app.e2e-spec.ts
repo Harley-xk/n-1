@@ -75,4 +75,18 @@ describe('App (e2e)', () => {
         expect(body.message?.length).toBeGreaterThan(0)
       })
   })
+
+  it('所有响应应携带安全响应头（安全响应头中间件全局生效）', () => {
+    return request(server)
+      .get('/api/health')
+      .expect(200)
+      .expect((res) => {
+        expect(res.headers['x-content-type-options']).toBe('nosniff')
+        expect(res.headers['x-frame-options']).toBe('DENY')
+        expect(res.headers['cache-control']).toBe('no-cache, no-store, max-age=0, must-revalidate')
+        expect(res.headers.pragma).toBe('no-cache')
+        expect(res.headers.expires).toBe('0')
+        expect(res.headers['referrer-policy']).toBe('no-referrer')
+      })
+  })
 })

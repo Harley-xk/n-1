@@ -5,7 +5,8 @@
  * 描述: 应用根模块：装配全局配置模块与 TypeORM 数据库连接，并注册根控制器/服务
  */
 
-import { Module } from '@nestjs/common'
+import { Module, NestModule, RequestMethod } from '@nestjs/common'
+import type { MiddlewareConsumer } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import { TypeOrmModule } from '@nestjs/typeorm'
@@ -15,6 +16,8 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor'
+import { AccessLogMiddleware } from './common/middleware/access-log.middleware'
+import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware'
 import { SignatureGuard } from './common/signature/signature.guard'
 import { SignatureModule } from './common/signature/signature.module'
 import configuration from './config/configuration'
@@ -62,4 +65,14 @@ import configuration from './config/configuration'
     AppService,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      // 安全响应头最先执行：对后续一切响应（含文档页、404）生效
+      .apply(SecurityHeadersMiddleware)
+      .forRoutes({ path: '{*splat}', method: RequestMethod.ALL })
+      // 访问日志次之：覆盖业务接口的完整处理耗时（路径过滤由中间件内部判断）
+      .apply(AccessLogMiddleware)
+      .forRoutes({ path: '{*splat}', method: RequestMethod.ALL })
+  }
+}

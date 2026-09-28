@@ -4,14 +4,16 @@ import { StreamableFile } from '@nestjs/common'
 import { of } from 'rxjs'
 
 import { TransformInterceptor } from './transform.interceptor'
+import type { ResponseCodeCarrier } from '../utils/response-code'
 
 /** 构造带可变状态码的执行上下文 mock */
 function createContext(statusCode: number) {
   const response = { statusCode }
+  const request: ResponseCodeCarrier = {}
   const context = {
-    switchToHttp: () => ({ getResponse: () => response }),
+    switchToHttp: () => ({ getResponse: () => response, getRequest: () => request }),
   }
-  return { context: context as unknown as ExecutionContext, response }
+  return { context: context as unknown as ExecutionContext, response, request }
 }
 
 /** 构造返回指定数据的 CallHandler mock */
@@ -22,13 +24,14 @@ function callHandlerWith<T>(data: T): CallHandler<T> {
 describe('TransformInterceptor', () => {
   const interceptor = new TransformInterceptor()
 
-  it('应将 200 响应的返回值包装为 { code: 0, data } 且不含 message 字段', () => {
-    const { context } = createContext(200)
+  it('应将 200 响应的返回值包装为 { code: 0, data } 且不含 message 字段，并回填业务响应码', () => {
+    const { context, request } = createContext(200)
     const payload = { name: 'n-1 API', version: '0.1.0' }
 
     interceptor.intercept(context, callHandlerWith(payload)).subscribe((result) => {
       expect(result).toEqual({ code: 0, data: payload })
       expect('message' in result).toBe(false)
+      expect(request.apiCode).toBe(0)
     })
   })
 
@@ -43,12 +46,13 @@ describe('TransformInterceptor', () => {
       })
   })
 
-  it('StreamableFile（文件下载）应原样直通不包装', () => {
-    const { context } = createContext(200)
+  it('StreamableFile（文件下载）应原样直通不包装，且不回填业务响应码', () => {
+    const { context, request } = createContext(200)
     const file = new StreamableFile(Buffer.from('测试文件内容'))
 
     interceptor.intercept(context, callHandlerWith(file)).subscribe((result) => {
       expect(result).toBe(file)
+      expect(request.apiCode).toBeUndefined()
     })
   })
 
@@ -60,11 +64,12 @@ describe('TransformInterceptor', () => {
     })
   })
 
-  it('非 2xx 状态码时 code 应兜底为 -1', () => {
-    const { context } = createContext(404)
+  it('非 2xx 状态码时 code 应兜底为通用段 500', () => {
+    const { context, request } = createContext(404)
 
     interceptor.intercept(context, callHandlerWith({})).subscribe((result) => {
-      expect(result).toEqual({ code: -1, data: {} })
+      expect(result).toEqual({ code: 500, data: {} })
+      expect(request.apiCode).toBe(500)
     })
   })
 })

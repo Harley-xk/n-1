@@ -1,4 +1,4 @@
-# Git 提交门禁：对暂存的代码文件自动执行 ESLint 修复并重新暂存（stage_fixed），
+# Git 提交门禁：对暂存的代码文件自动执行格式化与 ESLint 修复并重新暂存，
 # 存在无法自动修复的问题时中断提交。钩子由根 package.json 的 prepare 脚本（lefthook install）安装。
 pre-commit:
   commands:
@@ -7,9 +7,11 @@ pre-commit:
       run: pnpm exec eslint --fix --no-warn-ignored --config server/eslint.config.mjs {staged_files}
       stage_fixed: true
     lint-web:
-      glob: 'web/**/*.{js,mjs,cjs,ts,vue}'
-      run: pnpm exec eslint --fix --no-warn-ignored --config web/eslint.config.js {staged_files}
-      stage_fixed: true
+      # web 走 lint-staged：prettier 兜 ESLint 范围外的格式化（CSS 等）+ ESLint 修复，
+      # root 指定在 web/ 目录执行（lefthook 会把暂存路径转为相对该目录）
+      root: web
+      glob: '*.{js,ts,mjs,cjs,vue,css}'
+      run: pnpm run lint:staged
 
 # 提交信息格式校验：统一「【动作】模块 - 内容概述」（rules/base.md），格式见 scripts/verify-commit-msg.mjs
 commit-msg:

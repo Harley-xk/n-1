@@ -67,13 +67,13 @@ describe('ExceptionFilter (e2e)', () => {
     await app.close()
   })
 
-  it('BusinessError 应转为 HTTP 400 与统一错误结构（code < 0）', () => {
+  it('BusinessError 应转为 HTTP 400 与统一错误结构（未分类业务码 999）', () => {
     return request(server)
       .get('/api/exception-demo/business')
       .expect(400)
       .expect((res) => {
         const body = res.body as ApiResponse
-        expect(body.code).toBeLessThan(0)
+        expect(body.code).toBe(999)
         expect(body.message).toBe('演示业务错误：未找到该货币的汇率信息')
       })
   })
