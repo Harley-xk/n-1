@@ -21,6 +21,26 @@ export const SYSTEM_PERMISSION_CODES = {
   ROLE_UPDATE: 'system:role:update',
   ROLE_DELETE: 'system:role:delete',
   ROLE_ASSIGN_PERMISSION: 'system:role:assign-permission',
+  DICT_QUERY: 'system:dict:query',
+  DICT_CREATE: 'system:dict:create',
+  DICT_UPDATE: 'system:dict:update',
+  DICT_DELETE: 'system:dict:delete',
+  CONFIG_QUERY: 'system:config:query',
+  CONFIG_CREATE: 'system:config:create',
+  CONFIG_UPDATE: 'system:config:update',
+  CONFIG_DELETE: 'system:config:delete',
+  DEPT_QUERY: 'system:dept:query',
+  DEPT_CREATE: 'system:dept:create',
+  DEPT_UPDATE: 'system:dept:update',
+  DEPT_DELETE: 'system:dept:delete',
+  POST_QUERY: 'system:post:query',
+  POST_CREATE: 'system:post:create',
+  POST_UPDATE: 'system:post:update',
+  POST_DELETE: 'system:post:delete',
+  OPERATE_LOG_QUERY: 'system:operate-log:query',
+  OPERATE_LOG_DELETE: 'system:operate-log:delete',
+  LOGIN_LOG_QUERY: 'system:login-log:query',
+  LOGIN_LOG_DELETE: 'system:login-log:delete',
 } as const
 
 /** 权限点元数据（code + 中文名，中文名供角色分配界面展示） */
@@ -46,6 +66,26 @@ export const SYSTEM_PERMISSIONS: readonly PermissionPoint[] = [
   { code: SYSTEM_PERMISSION_CODES.ROLE_UPDATE, label: '角色修改' },
   { code: SYSTEM_PERMISSION_CODES.ROLE_DELETE, label: '角色删除' },
   { code: SYSTEM_PERMISSION_CODES.ROLE_ASSIGN_PERMISSION, label: '分配权限' },
+  { code: SYSTEM_PERMISSION_CODES.DICT_QUERY, label: '字典查询' },
+  { code: SYSTEM_PERMISSION_CODES.DICT_CREATE, label: '字典新增' },
+  { code: SYSTEM_PERMISSION_CODES.DICT_UPDATE, label: '字典修改' },
+  { code: SYSTEM_PERMISSION_CODES.DICT_DELETE, label: '字典删除' },
+  { code: SYSTEM_PERMISSION_CODES.CONFIG_QUERY, label: '参数查询' },
+  { code: SYSTEM_PERMISSION_CODES.CONFIG_CREATE, label: '参数新增' },
+  { code: SYSTEM_PERMISSION_CODES.CONFIG_UPDATE, label: '参数修改' },
+  { code: SYSTEM_PERMISSION_CODES.CONFIG_DELETE, label: '参数删除' },
+  { code: SYSTEM_PERMISSION_CODES.DEPT_QUERY, label: '部门查询' },
+  { code: SYSTEM_PERMISSION_CODES.DEPT_CREATE, label: '部门新增' },
+  { code: SYSTEM_PERMISSION_CODES.DEPT_UPDATE, label: '部门修改' },
+  { code: SYSTEM_PERMISSION_CODES.DEPT_DELETE, label: '部门删除' },
+  { code: SYSTEM_PERMISSION_CODES.POST_QUERY, label: '岗位查询' },
+  { code: SYSTEM_PERMISSION_CODES.POST_CREATE, label: '岗位新增' },
+  { code: SYSTEM_PERMISSION_CODES.POST_UPDATE, label: '岗位修改' },
+  { code: SYSTEM_PERMISSION_CODES.POST_DELETE, label: '岗位删除' },
+  { code: SYSTEM_PERMISSION_CODES.OPERATE_LOG_QUERY, label: '操作日志查询' },
+  { code: SYSTEM_PERMISSION_CODES.OPERATE_LOG_DELETE, label: '操作日志删除' },
+  { code: SYSTEM_PERMISSION_CODES.LOGIN_LOG_QUERY, label: '登录日志查询' },
+  { code: SYSTEM_PERMISSION_CODES.LOGIN_LOG_DELETE, label: '登录日志删除' },
 ]
 
 /**
@@ -84,6 +124,11 @@ export class PermissionRegistry {
   /** 全部已登记权限串（super_admin 全集语义的数据源；注册表新增权限点超管自动拥有） */
   allCodes(): string[] {
     return [...this.points.keys()]
+  }
+
+  /** 全部权限点元数据（code + label，权限点清单接口与角色分配界面的数据源） */
+  allPoints(): PermissionPoint[] {
+    return [...this.points.values()]
   }
 
   /** 写入侧登记校验：分配接口逐串调用，未登记返回 false 由调用方抛 ROLE_PERMISSION_UNKNOWN */

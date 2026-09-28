@@ -15,8 +15,16 @@ type JwtSignOptions = NonNullable<JwtModuleOptions['signOptions']>
 
 import { AuthController } from './auth/auth.controller'
 import { AuthService } from './auth/auth.service'
+import { ConfigEntity } from './entities/config.entity'
+import { DeptEntity } from './entities/dept.entity'
+import { DictDataEntity } from './entities/dict-data.entity'
+import { DictTypeEntity } from './entities/dict-type.entity'
+import { LoginLogEntity } from './entities/login-log.entity'
+import { OperateLogEntity } from './entities/operate-log.entity'
+import { PostEntity } from './entities/post.entity'
 import { RolePermissionEntity } from './entities/role-permission.entity'
 import { RoleEntity } from './entities/role.entity'
+import { UserPostEntity } from './entities/user-post.entity'
 import { UserRoleEntity } from './entities/user-role.entity'
 import { UserEntity } from './entities/user.entity'
 import { PermissionService } from './permission.service'
@@ -30,7 +38,20 @@ import { DEFAULT_JWT_SECRET } from '../../config/configuration'
 @Global()
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, RoleEntity, UserRoleEntity, RolePermissionEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      RoleEntity,
+      UserRoleEntity,
+      RolePermissionEntity,
+      DeptEntity,
+      PostEntity,
+      UserPostEntity,
+      DictTypeEntity,
+      DictDataEntity,
+      ConfigEntity,
+      OperateLogEntity,
+      LoginLogEntity,
+    ]),
     // JWT 签发与验签：global: true 使 JwtService 在任意模块可注入（JwtAuthGuard 经 APP_GUARD 在根模块解析依赖）
     JwtModule.registerAsync({
       global: true,
