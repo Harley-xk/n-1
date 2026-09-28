@@ -8,6 +8,8 @@
 import type { DataSourceOptions } from 'typeorm'
 
 export default () => ({
+  // 运行环境：development / test / production（DB_SYNC 收紧等安全开关按此判断）
+  env: process.env.NODE_ENV ?? 'development',
   port: parseInt(process.env.PORT ?? '3000', 10),
   swaggerEnabled: process.env.SWAGGER_ENABLED !== 'false',
   signature: {
@@ -19,7 +21,7 @@ export default () => ({
     expireMs: parseInt(process.env.SIGNATURE_EXPIRE_MS ?? String(5 * 60 * 1000), 10),
   },
   database: {
-    // 数据库类型：默认 postgres（首选），经 DB_TYPE 按项目需要切换（TypeORM 支持主流与国产化数据库）
+    // 数据库类型：默认 postgres（首选），经 DB_TYPE 按项目需要切换（仅承诺主流数据库，不做国产适配）
     type: (process.env.DB_TYPE ?? 'postgres') as DataSourceOptions['type'],
     host: process.env.DB_HOST ?? 'localhost',
     port: parseInt(process.env.DB_PORT ?? '5432', 10),

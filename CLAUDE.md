@@ -14,7 +14,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 当前状态
 
-**工程化快赢与契约定稿已完成**（2026-09-28，设计见 [docs/规划/批次一-工程化快赢与契约定稿.md](docs/规划/批次一-工程化快赢与契约定稿.md)，批次规划见 [n-2 消化吸收规划](docs/规划/n-2消化吸收规划.md)）：错误码升级为九位分段体系（模块 / 子域 / 序号各 3 位，通用段数值等于 HTTP 语义码，`BusinessError` 默认未分类业务码 999，前端判定改 `code !== 0`，ADR-002 实施定稿）；新增请求访问日志（含业务 code 回填）与安全响应头两个中间件；web vitest 切 jsdom + `@vue/test-utils`（组件测试链路解锁）；prettier + lint-staged 落地（ts/vue 归 ESLint，prettier 只兜 CSS）；浏览器 e2e 升级双 webServer（后端可拉起性探测自动拉起，无库环境回退为跳过）。`pnpm check` 全绿、浏览器 e2e 不回归，存量契约零破坏（404/401 等框架级 code 数值不变）。
+**数据层基建已完成**（2026-09-28，设计见 [docs/规划/批次二-数据层基建设计.md](docs/规划/批次二-数据层基建设计.md)，批次规划见 [n-2 消化吸收规划](docs/规划/n-2消化吸收规划.md)）：审计公共实体 `BaseEntity`（uuid 主键 + timestamptz 审计列 + TypeORM 原生软删，ADR-004 实施，业务实体一律继承）；请求上下文（AsyncLocalStorage 中间件）+ `AuditSubscriber` 审计自动填充（creator / updater，批次四接 JWT 后由 Guard 激活）；蛇形命名策略（自写 `SnakeNamingStrategy`）；TypeORM 迁移体系落地（`server/src/data-source.ts` + `migration:generate / run / revert` 三命令 + 空基线 `InitialBaseline`，ADR-005 实施）；`DB_SYNC` 生产强制关闭并告警；建表类型规约（PG 优先版：uuid / boolean / timestamptz / numeric）并入架构文档。新增 `dotenv` 一项事实依赖（迁移 CLI 读 `.env`）。`pnpm check` 全绿、浏览器 e2e 不回归（后端真实拉起验证装配正常）。**待办**：真库迁移闭环因本机库账号无建表权未跑，授权 SQL 见批次二设计文档 §5。
+
+**工程化快赢与契约定稿已完成**（2026-09-28，设计见 [docs/规划/批次一-工程化快赢与契约定稿.md](docs/规划/批次一-工程化快赢与契约定稿.md)）：错误码升级为九位分段体系（模块 / 子域 / 序号各 3 位，通用段数值等于 HTTP 语义码，`BusinessError` 默认未分类业务码 999，前端判定改 `code !== 0`，ADR-002 实施定稿）；新增请求访问日志（含业务 code 回填）与安全响应头两个中间件；web vitest 切 jsdom + `@vue/test-utils`（组件测试链路解锁）；prettier + lint-staged 落地（ts/vue 归 ESLint，prettier 只兜 CSS）；浏览器 e2e 升级双 webServer（后端可拉起性探测自动拉起，无库环境回退为跳过）。`pnpm check` 全绿、浏览器 e2e 不回归，存量契约零破坏（404/401 等框架级 code 数值不变）。
 
 ## 语言约定
 
@@ -47,6 +49,7 @@ n-1：企业级全栈项目框架底座，面向 **vibe coding first** 的 AI �
 | `pnpm --filter server test -- app.controller` | 运行单个测试（按名称匹配测试文件） |
 | `pnpm test:e2e` | 后端 e2e 测试（无需真实数据库，DataSource 已打桩） |
 | `pnpm test:e2e:web` | 浏览器端到端测试（Playwright，条件双 webServer 自动拉起前后端、复用本机 Chrome/Edge；无库环境自动回退为仅前端，全链路用例跳过；`E2E_BROWSER=msedge` 可切 Edge） |
+| `pnpm --filter server migration:run` | 数据库迁移：执行未跑的迁移（另有 `migration:generate -- src/migrations/<名称>` 生成、`migration:revert` 回退） |
 | `pnpm check` | 一键自检：lint + 类型检查 + 单测 + 后端 e2e（完成定义，见 rules/base.md） |
 | `pnpm lint` | 前后端 ESLint 检查并修复 |
 | `pnpm type-check` | 前端 vue-tsc 类型检查 |
@@ -72,10 +75,10 @@ VS Code 调试：`.vscode/launch.json` 提供三个一键配置（仅前端 / �
 ### 后端（server/）
 
 - **配置**：环境变量（`.env`，模板 `.env.example`）→ `src/config/configuration.ts` 汇总 → `ConfigService` 读取。业务代码**不直接读 `process.env`**
-- **数据库**：`TypeOrmModule.forRootAsync` 装配；`autoLoadEntities: true` —— 新实体只需在业务模块中 `forFeature([...])` 注册；`DB_SYNC=true`（仅开发）自动同步表结构，生产必须关闭（改用 TypeORM migration，实体为 schema 唯一事实源，见 [docs/决策/ADR-005](docs/决策/ADR-005-数据库迁移策略.md)）。默认与首选 PostgreSQL，**仅承诺主流数据库，不做国产数据库适配**（TypeORM 理论上支持多库切换，但不在本项目保障范围）
+- **数据库**：`TypeOrmModule.forRootAsync` 装配；`autoLoadEntities: true` —— 新实体只需在业务模块中 `forFeature([...])` 注册；业务实体**一律继承** `common/orm/base.entity.ts` 的 `BaseEntity`（uuid 主键 + 审计字段自动填充 + 软删，ADR-004）；表 / 列名蛇形小写（`SnakeNamingStrategy`）；`DB_SYNC=true`（仅开发）自动同步表结构，**生产强制关闭并告警**，建表与升级走 `migration:run`（实体为 schema 唯一事实源，见 [docs/决策/ADR-005](docs/决策/ADR-005-数据库迁移策略.md)）。默认与首选 PostgreSQL，**仅承诺主流数据库，不做国产数据库适配**（TypeORM 理论上支持多库切换，但不在本项目保障范围）
 - **业务模块**：按领域放 `server/src/modules/<领域>/`，生成骨架：`pnpm --filter server exec nest g resource modules/<领域>`
 - **全局设施**（main.ts）：路由前缀 `/api`、ValidationPipe（transform + whitelist + forbidNonWhitelisted）、CORS、Swagger（`SWAGGER_ENABLED` 控制）
-- **横切中间件**（`common/middleware/`，经 AppModule 的 NestModule 注册，e2e 自动继承）：安全响应头（全部响应注入 6 个防御头）→ 请求访问日志（`/api` 业务接口输出一行：方法 / 路径 / 状态码 / 业务 code / 耗时；业务 code 由拦截器与异常过滤器回填到 request）
+- **横切中间件**（`common/middleware/`，经 AppModule 的 NestModule 注册，e2e 自动继承）：请求上下文（每请求开启 AsyncLocalStorage 域，供审计填充读取操作人）→ 安全响应头（全部响应注入 6 个防御头）→ 请求访问日志（`/api` 业务接口输出一行：方法 / 路径 / 状态码 / 业务 code / 耗时；业务 code 由拦截器与异常过滤器回填到 request）
 - **错误码**：九位分段体系（模块 / 子域 / 序号各 3 位，`ErrorCode` 常量为唯一出处，通用段见 `common/errors/error-code.ts`；`BusinessError` 默认未分类业务码 999），详见 [统一响应与异常处理设计](docs/指南/统一响应与异常处理设计.md)
 - **测试**：Jest。单元测试与源码同目录（`*.spec.ts`）；e2e 在 `test/`，通过 `overrideProvider(getDataSourceToken())` 打桩跳过真实数据库
 
