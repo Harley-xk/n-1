@@ -7,6 +7,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 
+import { OperateLog } from '../../../common/decorators/operate-log.decorator'
 import type { PageResult } from '../../../common/interfaces/page-result.interface'
 import { RequirePermissions, SYSTEM_PERMISSION_CODES } from '../permissions'
 // 注意：作为 @Query()/@Body() 元类型的 DTO 类必须值导入（import type 会在运行时擦除，
@@ -35,6 +36,7 @@ export class RoleController {
   }
 
   @ApiOperation({ summary: '创建角色' })
+  @OperateLog('角色管理', '新增角色')
   @RequirePermissions(SYSTEM_PERMISSION_CODES.ROLE_CREATE)
   @Post('create')
   async create(@Body() dto: RoleCreateDto): Promise<string> {
@@ -42,6 +44,7 @@ export class RoleController {
   }
 
   @ApiOperation({ summary: '更新角色' })
+  @OperateLog('角色管理', '修改角色')
   @RequirePermissions(SYSTEM_PERMISSION_CODES.ROLE_UPDATE)
   @Put('update')
   async update(@Body() dto: RoleUpdateDto): Promise<void> {
@@ -49,6 +52,7 @@ export class RoleController {
   }
 
   @ApiOperation({ summary: '删除角色' })
+  @OperateLog('角色管理', '删除角色')
   @RequirePermissions(SYSTEM_PERMISSION_CODES.ROLE_DELETE)
   @Delete('delete/:id')
   async remove(@Param('id') id: string): Promise<void> {
@@ -63,6 +67,7 @@ export class RoleController {
   }
 
   @ApiOperation({ summary: '分配权限（差集增量绑定，逐串校验注册表登记）' })
+  @OperateLog('角色管理', '分配权限')
   @RequirePermissions(SYSTEM_PERMISSION_CODES.ROLE_ASSIGN_PERMISSION)
   @Put(':id/permissions')
   async assignPermissions(

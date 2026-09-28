@@ -2,7 +2,7 @@
  * 作者: Harley-xk
  * 创建: 2026-09-28
  *
- * 描述: 系统管理模块：装配认证 / 用户 / 角色域与权限注册表，导出 Guard 依赖的全局服务（认证授权设计见 docs/指南/权限设计.md）
+ * 描述: 系统管理模块：装配认证 / 用户 / 角色 / 字典 / 部门 / 岗位 / 参数 / 日志域与权限注册表，导出 Guard 依赖的全局服务
  */
 import { Global, Logger, Module, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -15,6 +15,12 @@ type JwtSignOptions = NonNullable<JwtModuleOptions['signOptions']>
 
 import { AuthController } from './auth/auth.controller'
 import { AuthService } from './auth/auth.service'
+import { SystemConfigController } from './config/config.controller'
+import { SystemConfigService } from './config/config.service'
+import { DeptController } from './dept/dept.controller'
+import { DeptService } from './dept/dept.service'
+import { DictController } from './dict/dict.controller'
+import { DictService } from './dict/dict.service'
 import { ConfigEntity } from './entities/config.entity'
 import { DeptEntity } from './entities/dept.entity'
 import { DictDataEntity } from './entities/dict-data.entity'
@@ -31,8 +37,11 @@ import { LoginLogController } from './login-log/login-log.controller'
 import { LoginLogService } from './login-log/login-log.service'
 import { OperateLogController } from './operate-log/operate-log.controller'
 import { OperateLogService } from './operate-log/operate-log.service'
+import { PermissionController } from './permission/permission.controller'
 import { PermissionService } from './permission.service'
 import { PermissionRegistry } from './permissions'
+import { PostController } from './post/post.controller'
+import { PostService } from './post/post.service'
 import { RoleController } from './role/role.controller'
 import { RoleService } from './role/role.service'
 import { UserController } from './user/user.controller'
@@ -70,11 +79,26 @@ import { DEFAULT_JWT_SECRET } from '../../config/configuration'
       }),
     }),
   ],
-  controllers: [AuthController, UserController, RoleController, OperateLogController, LoginLogController],
+  controllers: [
+    AuthController,
+    UserController,
+    RoleController,
+    DictController,
+    DeptController,
+    PostController,
+    SystemConfigController,
+    PermissionController,
+    OperateLogController,
+    LoginLogController,
+  ],
   providers: [
     AuthService,
     UserService,
     RoleService,
+    DictService,
+    DeptService,
+    PostService,
+    SystemConfigService,
     PermissionService,
     PermissionRegistry,
     // 异步任务队列：日志异步入库的消费通道（@Global 导出，供认证服务与根作用域的操作日志拦截器注入）

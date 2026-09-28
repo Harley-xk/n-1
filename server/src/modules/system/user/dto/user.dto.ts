@@ -2,7 +2,7 @@
  * 作者: Harley-xk
  * 创建: 2026-09-28
  *
- * 描述: 用户域 DTO 集：分页 / 创建 / 更新 / 重置密码 / 角色分配入参与列表出参契约
+ * 描述: 用户域 DTO 集：分页 / 创建 / 更新 / 重置密码 / 角色分配入参与列表出参契约（含部门 / 岗位扩展）
  */
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
@@ -20,12 +20,15 @@ import {
 
 import { PageParamDto } from '../../../../common/dto/page.dto'
 
-/** 用户列表出参（不回传口令散列） */
+/** 用户列表出参（不回传口令散列；部门 / 岗位为批量补全的冗余展示字段） */
 export interface UserVo {
   id: string
   username: string
   nickname: string
   status: boolean
+  deptId: string | null
+  deptName: string | null
+  postIds: string[]
   createTime: Date
 }
 
@@ -47,6 +50,11 @@ export class UserPageDto extends PageParamDto {
   @Type(() => Boolean)
   @IsBoolean()
   status?: boolean
+
+  @ApiPropertyOptional({ description: '所属部门 id（精确过滤，含该部门直接挂靠用户）' })
+  @IsOptional()
+  @IsUUID()
+  deptId?: string
 }
 
 export class UserCreateDto {
@@ -67,6 +75,19 @@ export class UserCreateDto {
   @IsString()
   @MaxLength(32)
   password?: string
+
+  @ApiPropertyOptional({ description: '所属部门 id；不传为未挂靠' })
+  @IsOptional()
+  @IsUUID()
+  deptId?: string
+
+  @ApiPropertyOptional({ description: '岗位 id 全集（差集增量绑定）', type: [String] })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique({ message: '岗位 id 不得重复' })
+  @ArrayMaxSize(100)
+  @IsUUID(undefined, { each: true })
+  postIds?: string[]
 }
 
 export class UserUpdateDto {
@@ -83,6 +104,19 @@ export class UserUpdateDto {
   @ApiProperty({ description: '启用状态' })
   @IsBoolean()
   status: boolean
+
+  @ApiPropertyOptional({ description: '所属部门 id；不传为清空挂靠' })
+  @IsOptional()
+  @IsUUID()
+  deptId?: string
+
+  @ApiPropertyOptional({ description: '岗位 id 全集（差集增量绑定）', type: [String] })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique({ message: '岗位 id 不得重复' })
+  @ArrayMaxSize(100)
+  @IsUUID(undefined, { each: true })
+  postIds?: string[]
 }
 
 export class UserResetPasswordDto {
