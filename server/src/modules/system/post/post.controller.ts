@@ -28,6 +28,13 @@ export class PostController {
     return this.postService.getPage(dto)
   }
 
+  @ApiOperation({ summary: '启用岗位全量列表（用户表单岗位多选数据源）' })
+  @RequirePermissions(SYSTEM_PERMISSION_CODES.POST_QUERY)
+  @Get('list')
+  async listEnabled(): Promise<PostVo[]> {
+    return this.postService.listEnabled()
+  }
+
   @ApiOperation({ summary: '创建岗位' })
   @OperateLog('岗位管理', '新增岗位')
   @RequirePermissions(SYSTEM_PERMISSION_CODES.POST_CREATE)

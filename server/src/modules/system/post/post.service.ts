@@ -43,6 +43,15 @@ export class PostService {
     return { list: list.map(post => this.toVo(post)), total }
   }
 
+  /** 启用状态全量列表（用户表单岗位多选的数据源；数量有限不分页） */
+  async listEnabled(): Promise<PostVo[]> {
+    const list = await this.postRepository.find({
+      where: { status: true },
+      order: { sort: 'ASC', createTime: 'ASC' },
+    })
+    return list.map(post => this.toVo(post))
+  }
+
   /** 创建岗位：code 查重 */
   async create(dto: PostCreateDto): Promise<string> {
     await this.validateCodeAvailable(dto.code)

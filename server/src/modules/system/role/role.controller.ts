@@ -28,6 +28,13 @@ export class RoleController {
     return this.roleService.getPage(dto)
   }
 
+  @ApiOperation({ summary: '启用角色全量列表（分配角色下拉数据源）' })
+  @RequirePermissions(SYSTEM_PERMISSION_CODES.ROLE_QUERY)
+  @Get('list')
+  async listEnabled(): Promise<RoleVo[]> {
+    return this.roleService.listEnabled()
+  }
+
   @ApiOperation({ summary: '角色详情（含权限串回显）' })
   @RequirePermissions(SYSTEM_PERMISSION_CODES.ROLE_QUERY)
   @Get(':id')

@@ -74,4 +74,11 @@ export class UserController {
   async assignRoles(@Body() dto: UserAssignRoleDto): Promise<void> {
     await this.userService.assignRoles(dto)
   }
+
+  @ApiOperation({ summary: '查询用户已分配角色 id 集（分配弹窗回显）' })
+  @RequirePermissions(SYSTEM_PERMISSION_CODES.USER_UPDATE)
+  @Get(':id/role-ids')
+  async getRoleIds(@Param('id') id: string): Promise<string[]> {
+    return this.userService.getRoleIds(id)
+  }
 }

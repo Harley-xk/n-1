@@ -115,6 +115,13 @@ export class UserService {
     await this.userRepository.save(user)
   }
 
+  /** 查用户已分配角色 id 集（分配角色弹窗回显） */
+  async getRoleIds(id: string): Promise<string[]> {
+    await this.getExistsUser(id)
+    const relations = await this.userRoleRepository.find({ where: { userId: id } })
+    return relations.map(relation => relation.roleId)
+  }
+
   /** 分配角色：全集差集增量绑定（物理删除 + 插入；内置管理员保护，防误解绑 super_admin 锁死系统） */
   async assignRoles(dto: UserAssignRoleDto): Promise<void> {
     const user = await this.getExistsUser(dto.id)

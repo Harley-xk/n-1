@@ -12,6 +12,7 @@ import DefaultLayout from '@/layouts/default/index.vue'
 
 import { demoRoutes } from './modules/demo'
 import { homeRoutes } from './modules/home'
+import { systemRoutes } from './modules/system'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -35,6 +36,7 @@ declare module 'vue-router' {
 /** 布局内业务路由（侧栏菜单由该树按权限过滤生成；新增业务模块在 router/modules/ 建文件后于此合并） */
 export const layoutChildren: RouteRecordRaw[] = [
   ...homeRoutes,
+  ...systemRoutes,
   ...demoRoutes,
   {
     // 刷新中转：进入即回跳原址（页签「刷新页签」经此强制重建组件实例）

@@ -101,4 +101,25 @@ describe('菜单权限过滤', () => {
 
     expect(tree).toHaveLength(3)
   })
+
+  it('子级全被权限过滤后空分组应一并剔除（父级无权限要求的场景）', () => {
+    // 实际路由形态：system 父级不挂 permission，八个子页各挂 query 权限；
+    // 无任何 system 权限的用户不应看到空的「系统管理」分组
+    const routesWithChildPermissions = [
+      { path: 'home', meta: { title: '首页' } },
+      {
+        path: 'system',
+        meta: { title: '系统管理', icon: 'system' },
+        children: [
+          { path: 'user', meta: { title: '用户管理', permission: 'system:user:query' } },
+          { path: 'role', meta: { title: '角色管理', permission: 'system:role:query' } },
+        ],
+      },
+    ] as unknown as RouteRecordRaw[]
+    const denyAll = (permission?: string) => permission === undefined
+
+    const tree = buildMenuTree(routesWithChildPermissions, '/', denyAll)
+
+    expect(tree.map(node => node.path)).toEqual(['/home'])
+  })
 })

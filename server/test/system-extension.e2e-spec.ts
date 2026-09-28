@@ -300,6 +300,30 @@ describe('SystemExtension (e2e)', () => {
       })
   })
 
+  it('启用角色列表与用户角色回显应支撑分配弹窗数据链路', () => {
+    return request(server)
+      .get('/api/system/role/list')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200)
+      .expect((res) => {
+        const body = res.body as ApiResponse<{ id: string, status: boolean }[]>
+        expect(body.code).toBe(0)
+        expect(body.data).toHaveLength(1)
+        expect(body.data?.[0]?.id).toBe(SUPER_ADMIN_ROLE_ID)
+      })
+      .then(() =>
+        request(server)
+          .get(`/api/system/user/${ADMIN_ID}/role-ids`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200)
+          .expect((res) => {
+            const body = res.body as ApiResponse<string[]>
+            expect(body.code).toBe(0)
+            expect(body.data).toEqual([SUPER_ADMIN_ROLE_ID])
+          }),
+      )
+  })
+
   it('用户分页应批量补全部门名与岗位集合', () => {
     return request(server)
       .get('/api/system/user/page')

@@ -64,3 +64,14 @@ body {
   margin-top: 0;
   border-top: 1px solid var(--n1-border);
 }
+
+/* 管理页查询行：末项右对齐放置主操作按钮（新增等） */
+.search-bar .el-form-item:last-child {
+  margin-left: auto;
+}
+
+/* 管理页分页条：右对齐 + 与表格的纵向间距 */
+.pagination-bar {
+  margin-top: 12px;
+  justify-content: flex-end;
+}

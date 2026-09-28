@@ -47,6 +47,15 @@ export class RoleService {
     return { list: list.map(role => this.toVo(role)), total }
   }
 
+  /** 启用状态全量列表（分配角色下拉的数据源；数量有限不分页） */
+  async listEnabled(): Promise<RoleVo[]> {
+    const list = await this.roleRepository.find({
+      where: { status: true },
+      order: { sort: 'ASC', createTime: 'ASC' },
+    })
+    return list.map(role => this.toVo(role))
+  }
+
   /** 角色详情（含权限串回显，读取侧不过滤注册表） */
   async getDetail(id: string): Promise<RoleDetailVo> {
     const role = await this.getExistsRole(id)

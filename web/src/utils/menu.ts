@@ -39,7 +39,8 @@ function toTitle(route: RouteRecordRaw): string {
 
 /**
  * 路由树 → 菜单树：meta.hidden 的路由不进菜单（路由仍注册，供直链访问）；
- * 配置了 meta.permission 且无权限的节点整棵剔除（无权页面菜单不可见，与直链跳 404 语义一致）
+ * 配置了 meta.permission 且无权限的节点整棵剔除（无权页面菜单不可见，与直链跳 404 语义一致）；
+ * 权限过滤后子级全空的分组节点一并剔除（无任何相关权限的用户不应看到空分组）
  *
  * @param routes        Layout 的 children 路由数组
  * @param base          父级绝对路径（根为 /）
@@ -60,11 +61,16 @@ export function buildMenuTree(
     }
     const path = joinPath(base, route.path)
     const icon = route.meta?.icon
+    const children = buildMenuTree(route.children ?? [], path, hasPermission)
+    // 有子路由的分组被过滤到空则不渲染（显式配置 children 的分组节点才适用；叶子路由自身有效）
+    if ((route.children ?? []).length > 0 && children.length === 0) {
+      continue
+    }
     nodes.push({
       path,
       title: toTitle(route),
       icon: typeof icon === 'string' ? icon : undefined,
-      children: buildMenuTree(route.children ?? [], path, hasPermission),
+      children,
     })
   }
   return nodes
