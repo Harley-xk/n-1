@@ -27,7 +27,7 @@ n-1 是一套**企业级全栈项目框架底座**，面向 **vibe coding first*
 | --- | --- | --- |
 | 后端 | Node.js 20+ / NestJS 11 | 模块化企业级后端框架 |
 | ORM | TypeORM | 数据库访问与实体建模 |
-| 数据库 | PostgreSQL（默认） | 生产级关系型数据库；TypeORM 支持所有主流与部分国产化数据库，可按项目需要切换 |
+| 数据库 | PostgreSQL（默认） | 生产级关系型数据库；仅承诺主流数据库，不做国产化适配 |
 | 前端 | Vue 3 / Vite / TypeScript | 组合式 API + 渐进式框架 |
 | 状态管理 | Pinia | Vue 官方推荐状态管理 |
 | UI 组件库 | Element Plus | 企业级 Vue 3 组件库 |
