@@ -1,5 +1,11 @@
-// 纯前端链路用例：验证批次三布局门面——骨架渲染、菜单导航、多标签操作（开 / 关 / 批量 / 刷新）、侧栏收起与主题切换
+// 纯前端链路用例：验证批次三布局门面——骨架渲染、菜单导航、多标签操作（开 / 关 / 批量 / 刷新）、侧栏收起与主题切换（认证态经路由 mock 建立）
 import { expect, test } from '@playwright/test'
+
+import { mockAuthState } from './support/auth'
+
+test.beforeEach(async ({ page }) => {
+  await mockAuthState(page)
+})
 
 /** 页签元素定位（fullPath 为 data-fullpath 属性） */
 function tagOf(page: import('@playwright/test').Page, fullPath: string) {

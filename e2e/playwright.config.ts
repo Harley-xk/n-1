@@ -22,7 +22,9 @@ const backendAvailable
 
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: true,
+  // 认证用例共享浏览器与登录态语义，串行执行避免会话干扰（对齐 n-2 e2e 约束）
+  fullyParallel: false,
+  workers: 1,
   // CI 环境禁止 .only，失败自动重试
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

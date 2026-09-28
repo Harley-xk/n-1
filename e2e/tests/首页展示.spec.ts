@@ -1,5 +1,11 @@
-// 纯前端链路用例：不依赖后端服务，验证首页文案与 Pinia 示例交互
+// 纯前端链路用例：不依赖后端服务，验证首页文案与 Pinia 示例交互（认证态经路由 mock 建立）
 import { expect, test } from '@playwright/test'
+
+import { mockAuthState } from './support/auth'
+
+test.beforeEach(async ({ page }) => {
+  await mockAuthState(page)
+})
 
 test.describe('首页展示', () => {
   test('标题与定位副标题可见', async ({ page }) => {

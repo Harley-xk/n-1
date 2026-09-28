@@ -2,9 +2,12 @@
 // 依赖后端与 PostgreSQL 就绪；探测失败时整组自动跳过而非报错，避免无数据库环境下 CI 红
 import { expect, test } from '@playwright/test'
 
-test.beforeEach(async ({ request }) => {
+import { loginViaApi } from './support/auth'
+
+test.beforeEach(async ({ page, request }) => {
   const health = await request.get('http://localhost:3000/api/health').catch(() => null)
   test.skip(!health?.ok(), '后端服务未启动或数据库未就绪（需先配置 server/.env 并启动 pnpm dev:server）')
+  await loginViaApi(page, request)
 })
 
 test.describe('后端连通性', () => {
