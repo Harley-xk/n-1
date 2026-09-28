@@ -1,4 +1,4 @@
-import type { InternalAxiosRequestConfig } from 'axios'
+import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { http } from './http'
@@ -101,5 +101,67 @@ describe('http 请求拦截器 · 签名注入', () => {
     const config = captured[0]
 
     expect(config.headers.get('sign')).toBeUndefined()
+  })
+})
+
+describe('http 鉴权注入与 401 处理', () => {
+  afterEach(() => {
+    localStorage.clear()
+    vi.unstubAllGlobals()
+  })
+
+  it('localStorage 持有 token 时请求应注入 Authorization 头', async () => {
+    localStorage.setItem('N1_TOKEN', 'jwt-abc')
+    const captured = captureAdapter()
+
+    await http.get('/demo')
+    const config = captured[0]
+
+    expect(config.headers.get('Authorization')).toBe('Bearer jwt-abc')
+  })
+
+  it('未登录时请求不注入 Authorization 头', async () => {
+    const captured = captureAdapter()
+
+    await http.get('/demo')
+    const config = captured[0]
+
+    expect(config.headers.get('Authorization')).toBeUndefined()
+  })
+
+  it('HTTP 401 应清 token、整页跳登录页（带 redirect）且 reject ApiError(401)', async () => {
+    localStorage.setItem('N1_TOKEN', 'expired-token')
+    // 覆盖 window.location（jsdom 不执行真实导航），捕获整页跳转目标
+    const fakeLocation = { pathname: '/home', search: '?tab=1', href: '' }
+    vi.stubGlobal('location', fakeLocation)
+    // adapter 协议要求非 2xx 自行 reject（settle 是 adapter 的职责），构造带 response 的 AxiosError
+    http.defaults.adapter = (config) => {
+      const response = {
+        data: { code: 401, message: '未登录或登录已过期' },
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: {},
+        config,
+      }
+      return Promise.reject(
+        new AxiosError('Request failed with status code 401', AxiosError.ERR_BAD_RESPONSE, config, null, response as never),
+      )
+    }
+
+    await expect(http.get('/demo')).rejects.toMatchObject({ name: 'ApiError', code: 401 })
+    expect(localStorage.getItem('N1_TOKEN')).toBeNull()
+    expect(fakeLocation.href).toBe('/login?redirect=' + encodeURIComponent('/home?tab=1'))
+  })
+
+  it('HTTP 200 但 code 非 0 应 reject 携带分段错误码的 ApiError（如登录口令错误）', async () => {
+    http.defaults.adapter = async (config) => ({
+      data: { code: 100000000, message: '账号或密码错误' },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+    })
+
+    await expect(http.get('/demo')).rejects.toMatchObject({ name: 'ApiError', code: 100000000 })
   })
 })

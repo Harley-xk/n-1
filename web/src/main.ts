@@ -15,15 +15,18 @@ import 'element-plus/theme-chalk/dark/css-vars.css'
 import '@/styles/index.css'
 
 import App from './App.vue'
+import { hasPermi } from './directives/has-permi'
 import router from './router'
 import { setupRouterGuard } from './router/guard'
 
 const app = createApp(App)
 
 app.use(createPinia())
-// 守卫依赖 Pinia（页签 store），须在 Pinia 装配后、路由挂载前安装
+// 守卫依赖 Pinia（认证与页签 store），须在 Pinia 装配后、路由挂载前安装
 setupRouterGuard(router)
 app.use(router)
 app.use(ElementPlus, { locale: zhCn })
+// v-hasPermi 权限指令（页内按钮 / 区块粒度控制）
+app.directive('hasPermi', hasPermi)
 
 app.mount('#app')

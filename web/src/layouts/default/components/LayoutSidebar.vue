@@ -43,15 +43,17 @@ import { SLOT_KEYS } from '@/framework/slots/keys'
 import SlotRenderer from '@/framework/slots/SlotRenderer.vue'
 import { layoutChildren } from '@/router'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 import { buildMenuTree } from '@/utils/menu'
 
 import SideMenuItem from './SideMenuItem.vue'
 
 const route = useRoute()
 const app = useAppStore()
+const auth = useAuthStore()
 
-/** 侧栏菜单：Layout 静态子路由树生成（ADR-001；批次四在此层加权限过滤） */
-const menus = computed(() => buildMenuTree(layoutChildren))
+/** 侧栏菜单：Layout 静态子路由树生成并按权限过滤（ADR-001；判定传入 store 方法以响应权限集合变更） */
+const menus = computed(() => buildMenuTree(layoutChildren, '/', permission => auth.hasPermission(permission)))
 </script>
 
 <style scoped>

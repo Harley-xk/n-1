@@ -66,9 +66,9 @@ export default tseslint.config(
       'vue/html-indent': ['error', 2],
       'vue/html-quotes': ['error', 'double'],
 
-      // 页面入口为目录 + index.vue（views 惯例）；根组件 App 与首页 Home 单词命名
+      // 页面入口为目录 + index.vue（views 惯例）；根组件 App、首页 Home 与登录页 Login 单词命名
       // （Home 是 keep-alive 缓存键契约：路由 name ↔ 页面 defineOptions name 对齐）
-      'vue/multi-word-component-names': ['error', { ignores: ['App', 'Home', 'index'] }],
+      'vue/multi-word-component-names': ['error', { ignores: ['App', 'Home', 'Login', 'index'] }],
     },
   },
   {
