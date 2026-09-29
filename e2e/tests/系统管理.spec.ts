@@ -1,8 +1,9 @@
 // 全链路用例：批次五系统管理扩展——侧栏分组、用户页 CRUD 与分配角色回显、角色页分配权限分组勾选、
 // 字典数据抽屉 DictTag 渲染、登录日志首行。依赖后端与 PostgreSQL 就绪（种子账号 admin/admin123）；
 // 探测失败时整组自动跳过。写操作用例均为「新建 → 验证 → 删除」闭环，不污染种子数据
-// 选择器约定：el-select 非过滤态无 input placeholder 属性（定位走表单项容器）；el-checkbox 原生
-// input 为隐藏元素（点击走 label 文本，勾选态断言用 toBeChecked）；按钮 accessible name 源码原样
+// 选择器约定：表格行用 .vxe-body--row（列表表格统一 N1Table / vxe-table）；el-select 非过滤态无
+// input placeholder 属性（定位走表单项容器）；el-checkbox 原生 input 为隐藏元素（点击走 label 文本，
+// 勾选态断言用 toBeChecked）；按钮 accessible name 源码原样
 import { expect, test } from '@playwright/test'
 
 import { loginViaApi } from './support/auth'
@@ -33,7 +34,7 @@ test.describe('系统管理', () => {
     await page.goto('/system/user')
 
     // 列表含种子账号 admin（昵称列）
-    await expect(page.locator('.el-table__row').filter({ hasText: '系统管理员' })).toBeVisible()
+    await expect(page.locator('.vxe-body--row').filter({ hasText: '系统管理员' })).toBeVisible()
 
     // 新增用户：登录账号 + 昵称 + 部门树选「研发部」+ 岗位多选「研发工程师」
     const username = `e2e_${Date.now() % 100000}`
@@ -57,21 +58,21 @@ test.describe('系统管理', () => {
 
     await primaryButton(dialog, '确定').click()
 
-    // 保存成功弹窗关闭，新行出现且部门冗余字段随分页返回（宽表 fixed 列会克隆行 DOM，取首个）
-    const row = page.locator('.el-table__row').filter({ hasText: nickname }).first()
+    // 保存成功弹窗关闭，新行出现且部门冗余字段随分页返回（历史行残留同名时取首个）
+    const row = page.locator('.vxe-body--row').filter({ hasText: nickname }).first()
     await expect(row).toBeVisible()
     await expect(row).toContainText('研发部')
 
     // 行内删除闭环（MessageBox 默认确认按钮为「确定」，弹层内定位避免与行内 link 同名冲突）
     await row.getByRole('button', { name: '删除' }).click()
     await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
-    await expect(page.locator('.el-table__row').filter({ hasText: nickname })).toHaveCount(0)
+    await expect(page.locator('.vxe-body--row').filter({ hasText: nickname })).toHaveCount(0)
   })
 
   test('用户分配角色弹窗回显已挂角色（admin 挂 super_admin）', async ({ page }) => {
     await page.goto('/system/user')
 
-    const row = page.locator('.el-table__row').filter({ hasText: '系统管理员' }).first()
+    const row = page.locator('.vxe-body--row').filter({ hasText: '系统管理员' }).first()
     await row.getByRole('button', { name: '分配角色' }).click()
 
     // 弹窗内启用角色列表渲染且 super_admin 处于勾选态（原生 input 隐藏，只断言 checked）
@@ -98,7 +99,7 @@ test.describe('系统管理', () => {
     await dialog.getByPlaceholder('角色名称').fill(roleName)
     await primaryButton(dialog, '确定').click()
 
-    const row = page.locator('.el-table__row').filter({ hasText: roleName }).first()
+    const row = page.locator('.vxe-body--row').filter({ hasText: roleName }).first()
     await expect(row).toBeVisible()
 
     // 分配权限：分组标题渲染（权限点按域分组），勾选「用户管理」组一项后保存
@@ -121,24 +122,25 @@ test.describe('系统管理', () => {
 
     await row.getByRole('button', { name: '删除' }).click()
     await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
-    await expect(page.locator('.el-table__row').filter({ hasText: roleName })).toHaveCount(0)
+    await expect(page.locator('.vxe-body--row').filter({ hasText: roleName })).toHaveCount(0)
   })
 
   test('字典管理：类型表 DictTag 渲染 + 数据抽屉种子数据与配色', async ({ page }) => {
     await page.goto('/system/dict')
 
     // 类型表状态列：通用状态（启用）经字典翻译渲染 success 语义色
-    const row = page.locator('.el-table__row').filter({ hasText: '通用状态' })
+    const row = page.locator('.vxe-body--row').filter({ hasText: '通用状态' })
     await expect(row).toBeVisible()
     await expect(row.locator('.el-tag--success')).toBeVisible()
     await row.getByRole('button', { name: '数据' }).click()
 
     // 抽屉内独立分页数据表：种子两行齐全（两条数据均启用，状态列同为「启用」，行区分靠标签列）
+    // 行计数限定主区容器：fixed 操作列会额外克隆一份 fixed-right body（克隆行仅含操作列文本）
     const drawer = page.locator('.el-drawer').filter({ hasText: '字典数据 - 通用状态' })
     await expect(drawer).toBeVisible()
-    await expect(drawer.locator('.el-table__row')).toHaveCount(2)
-    const enabledRow = drawer.locator('.el-table__row').filter({ hasText: '启用', hasNotText: '停用' })
-    const disabledRow = drawer.locator('.el-table__row').filter({ hasText: '停用' })
+    await expect(drawer.locator('.vxe-table--main-wrapper .vxe-body--row')).toHaveCount(2)
+    const enabledRow = drawer.locator('.vxe-body--row').filter({ hasText: '启用', hasNotText: '停用' })
+    const disabledRow = drawer.locator('.vxe-body--row').filter({ hasText: '停用' })
     await expect(enabledRow).toBeVisible()
     await expect(disabledRow).toBeVisible()
     // 标签配色列渲染语义色 tag（启用行 success、停用行 danger）
@@ -152,15 +154,15 @@ test.describe('系统管理', () => {
     // 登录日志异步入库：首拉为空则整页重载重试（expect.poll 兜底队列写入延迟）
     await expect
       .poll(async () => {
-        if (!(await page.locator('.el-table__row').first().isVisible())) {
+        if (!(await page.locator('.vxe-body--row').first().isVisible())) {
           await page.reload()
           return ''
         }
-        return await page.locator('.el-table__row').first().innerText()
+        return await page.locator('.vxe-body--row').first().innerText()
       }, { timeout: 10_000 })
       .toContain('admin')
 
-    const firstRow = page.locator('.el-table__row').first()
+    const firstRow = page.locator('.vxe-body--row').first()
     await expect(firstRow.locator('.el-tag', { hasText: '登录' })).toBeVisible()
     await expect(firstRow.locator('.el-tag--success')).toBeVisible()
   })

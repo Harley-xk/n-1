@@ -1,8 +1,8 @@
 // 全链路用例：批次六样板业务模块——开发示例分组、商品列表字典翻译（DictTag 分类 / 状态复用）、
 // 新增 / 编辑 / 删除闭环、搜索过滤与 keep-alive 载体。依赖后端与 PostgreSQL 就绪（种子账号
 // admin/admin123）；探测失败时整组自动跳过。写操作用例为「新建 → 验证 → 删除」闭环且名称带随机后缀，
-// 不污染种子数据。选择器约定同系统管理：el-select 非过滤态走表单项容器定位；行断言用
-// filter hasText（对宽表 fixed 列克隆行 DOM 免疫），命中多行时取 first()
+// 不污染种子数据。选择器约定同系统管理：表格行用 .vxe-body--row（列表表格统一 N1Table / vxe-table）；
+// el-select 非过滤态走表单项容器定位；行断言用 filter hasText，命中多行时取 first()
 import { expect, test } from '@playwright/test'
 
 import { loginViaApi } from './support/auth'
@@ -30,18 +30,18 @@ test.describe('开发示例', () => {
     await page.goto('/demo/product')
 
     // 启用商品：分类 digital → 数码（primary）、状态启用 → success、金额固定两位小数
-    const row = page.locator('.el-table__row').filter({ hasText: '无线蓝牙耳机' })
+    const row = page.locator('.vxe-body--row').filter({ hasText: '无线蓝牙耳机' })
     await expect(row).toBeVisible()
     await expect(row.locator('.el-tag--primary')).toHaveText('数码')
     await expect(row.locator('.el-tag--success')).toHaveText('启用')
     await expect(row.getByText('299.00')).toBeVisible()
 
     // 非整数金额：59.9 → 59.90（formatter 两位小数）
-    const shirtRow = page.locator('.el-table__row').filter({ hasText: '纯棉 T 恤' })
+    const shirtRow = page.locator('.vxe-body--row').filter({ hasText: '纯棉 T 恤' })
     await expect(shirtRow.getByText('59.90')).toBeVisible()
 
     // 停用商品：分类 book → 图书（info）、状态停用 → danger
-    const disabledRow = page.locator('.el-table__row').filter({ hasText: '深入浅出 Vue.js' })
+    const disabledRow = page.locator('.vxe-body--row').filter({ hasText: '深入浅出 Vue.js' })
     await expect(disabledRow.locator('.el-tag--info')).toHaveText('图书')
     await expect(disabledRow.locator('.el-tag--danger')).toHaveText('停用')
   })
@@ -62,7 +62,7 @@ test.describe('开发示例', () => {
     await dialog.getByRole('button', { name: '确定' }).click()
 
     // 新行出现：金额格式化 128.50、分类翻译「服饰」（success 语义色）
-    const row = page.locator('.el-table__row').filter({ hasText: name }).first()
+    const row = page.locator('.vxe-body--row').filter({ hasText: name }).first()
     await expect(row).toBeVisible()
     await expect(row.getByText('128.50')).toBeVisible()
     await expect(row.locator('.el-tag--success', { hasText: '服饰' })).toBeVisible()
@@ -79,7 +79,7 @@ test.describe('开发示例', () => {
     // 删除闭环（MessageBox 确认在弹层内定位，避免与行内 link 同名冲突）
     await row.getByRole('button', { name: '删除' }).click()
     await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
-    await expect(page.locator('.el-table__row').filter({ hasText: name })).toHaveCount(0)
+    await expect(page.locator('.vxe-body--row').filter({ hasText: name })).toHaveCount(0)
   })
 
   test('搜索过滤与 keep-alive 载体：关键字保留、重置恢复全量', async ({ page }) => {
@@ -89,19 +89,19 @@ test.describe('开发示例', () => {
     const keyword = page.getByPlaceholder('名称模糊匹配')
     await keyword.fill('耳机')
     await page.getByRole('button', { name: '查询' }).click()
-    await expect(page.locator('.el-table__row').filter({ hasText: '无线蓝牙耳机' })).toBeVisible()
-    await expect(page.locator('.el-table__row').filter({ hasText: '纯棉 T 恤' })).toHaveCount(0)
+    await expect(page.locator('.vxe-body--row').filter({ hasText: '无线蓝牙耳机' })).toBeVisible()
+    await expect(page.locator('.vxe-body--row').filter({ hasText: '纯棉 T 恤' })).toHaveCount(0)
 
     // 切走切回：keep-alive 缓存生效，关键字与过滤结果保留
     await tagOf(page, '/home').click()
     await tagOf(page, '/demo/product').click()
     await expect(keyword).toHaveValue('耳机')
-    await expect(page.locator('.el-table__row').filter({ hasText: '无线蓝牙耳机' })).toBeVisible()
+    await expect(page.locator('.vxe-body--row').filter({ hasText: '无线蓝牙耳机' })).toBeVisible()
 
     // 重置：恢复全量（种子三行齐全）
     await page.getByRole('button', { name: '重置' }).click()
-    await expect(page.locator('.el-table__row').filter({ hasText: '纯棉 T 恤' })).toBeVisible()
-    await expect(page.locator('.el-table__row').filter({ hasText: '深入浅出 Vue.js' })).toBeVisible()
+    await expect(page.locator('.vxe-body--row').filter({ hasText: '纯棉 T 恤' })).toBeVisible()
+    await expect(page.locator('.vxe-body--row').filter({ hasText: '深入浅出 Vue.js' })).toBeVisible()
     await expect(keyword).toHaveValue('')
   })
 })
