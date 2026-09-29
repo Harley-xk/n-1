@@ -1,8 +1,8 @@
 /*
  * 作者: Harley-xk
- * 创建: 2026-09-28
+ * 创建: 2026-09-29
  *
- * 描述: 组件演示路由模块（无 meta.permission = 仅需登录即可见；批次六由样板模块吸收）
+ * 描述: 开发示例路由模块（示例商品单表 CRUD 样板，接入方式见 docs/指南/新模块接入指南.md 第 7 步）
  */
 import type { RouteRecordRaw } from 'vue-router'
 
@@ -10,20 +10,14 @@ export const demoRoutes: RouteRecordRaw[] = [
   {
     path: 'demo',
     name: 'Demo',
-    redirect: '/demo/cache',
-    meta: { title: '组件演示', icon: 'demo' },
+    redirect: '/demo/product',
+    meta: { title: '开发示例', icon: 'demo' },
     children: [
       {
-        path: 'cache',
-        name: 'DemoCache',
-        component: () => import('@/views/demo/cache/index.vue'),
-        meta: { title: '缓存演示', keepAlive: true },
-      },
-      {
-        path: 'tabs',
-        name: 'DemoTabs',
-        component: () => import('@/views/demo/tabs/index.vue'),
-        meta: { title: '页签演示' },
+        path: 'product',
+        name: 'DemoProduct',
+        component: () => import('@/views/demo/product/index.vue'),
+        meta: { title: '商品管理', icon: 'product', permission: 'demo:product:query', keepAlive: true },
       },
     ],
   },

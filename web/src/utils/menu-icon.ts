@@ -7,6 +7,7 @@
 import {
   Collection,
   Document,
+  Goods,
   HomeFilled,
   Key,
   Menu,
@@ -34,6 +35,7 @@ const ICON_MAP: Record<string, Component> = {
   'login-log': Key,
   online: Monitor,
   demo: Collection,
+  product: Goods,
 }
 
 export function resolveMenuIcon(icon: string | null | undefined): Component {

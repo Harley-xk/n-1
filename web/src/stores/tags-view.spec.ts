@@ -12,11 +12,11 @@ function makeRoute(
   overrides: Partial<RouteLocationNormalizedLoaded> = {},
 ): RouteLocationNormalizedLoaded {
   return {
-    fullPath: '/demo/cache',
-    path: '/demo/cache',
-    name: 'DemoCache',
+    fullPath: '/demo/product',
+    path: '/demo/product',
+    name: 'DemoProduct',
     query: {},
-    meta: { title: '缓存演示', keepAlive: true },
+    meta: { title: '商品管理', keepAlive: true },
     ...overrides,
   } as RouteLocationNormalizedLoaded
 }
@@ -40,15 +40,15 @@ describe('多标签状态机', () => {
     const tagsView = useTagsViewStore()
 
     addTags(tagsView, [
-      ['/demo/cache', 'DemoCache'],
-      ['/demo/tabs', 'DemoTabs'],
+      ['/demo/product', 'DemoProduct'],
+      ['/demo/other', 'DemoOther'],
     ])
     tagsView.addView(
       makeRoute({ fullPath: '/redirect/x', path: '/redirect/x', meta: { noTag: true } }),
     )
 
     const paths = tagsView.views.map((view) => view.fullPath)
-    expect(paths).toEqual(['/home', '/demo/cache', '/demo/tabs'])
+    expect(paths).toEqual(['/home', '/demo/product', '/demo/other'])
     expect(tagsView.views[0].affix).toBe(true)
   })
 
@@ -56,12 +56,12 @@ describe('多标签状态机', () => {
     const tagsView = useTagsViewStore()
 
     tagsView.addView(makeRoute())
-    tagsView.addView(makeRoute({ fullPath: '/demo/tabs?tab=2', path: '/demo/tabs', query: { tab: '2' } }))
-    tagsView.addView(makeRoute({ meta: { title: '缓存演示改', keepAlive: true } }))
+    tagsView.addView(makeRoute({ fullPath: '/demo/product?from=detail', path: '/demo/product', query: { from: 'detail' } }))
+    tagsView.addView(makeRoute({ meta: { title: '商品管理改', keepAlive: true } }))
 
     expect(tagsView.views).toHaveLength(3) // 首页 + 两个 query 页签
-    expect(tagsView.views.find((view) => view.fullPath === '/demo/cache')?.title).toBe(
-      '缓存演示改',
+    expect(tagsView.views.find((view) => view.fullPath === '/demo/product')?.title).toBe(
+      '商品管理改',
     )
   })
 
@@ -73,27 +73,27 @@ describe('多标签状态机', () => {
       makeRoute({
         matched: [
           { name: 'Layout', meta: {} },
-          { name: 'Demo', meta: { title: '组件演示', icon: 'demo' } },
-          { name: 'DemoCache', meta: { title: '缓存演示', icon: 'doc' } },
+          { name: 'Demo', meta: { title: '开发示例', icon: 'demo' } },
+          { name: 'DemoProduct', meta: { title: '商品管理', icon: 'product' } },
         ],
       } as Partial<RouteLocationNormalizedLoaded>),
     )
-    expect(tagsView.findView('/demo/cache')?.icon).toBe('doc')
+    expect(tagsView.findView('/demo/product')?.icon).toBe('product')
 
     // 隐藏子页（详情 / 表单页）自身未配图标：回退所属目录图标
     tagsView.addView(
       makeRoute({
-        fullPath: '/demo/cache/detail',
-        path: '/demo/cache/detail',
-        name: 'DemoCacheDetail',
+        fullPath: '/demo/product/detail',
+        path: '/demo/product/detail',
+        name: 'DemoProductDetail',
         matched: [
           { name: 'Layout', meta: {} },
-          { name: 'Demo', meta: { title: '组件演示', icon: 'demo' } },
-          { name: 'DemoCacheDetail', meta: { title: '详情', icon: null } },
+          { name: 'Demo', meta: { title: '开发示例', icon: 'demo' } },
+          { name: 'DemoProductDetail', meta: { title: '详情', icon: null } },
         ],
       } as Partial<RouteLocationNormalizedLoaded>),
     )
-    expect(tagsView.findView('/demo/cache/detail')?.icon).toBe('demo')
+    expect(tagsView.findView('/demo/product/detail')?.icon).toBe('demo')
 
     // 全链无图标：留空，由渲染侧兜底默认图标
     tagsView.addView(
@@ -113,17 +113,17 @@ describe('多标签状态机', () => {
   it('关闭当前签：激活左邻，无左邻取右邻，固定签不可关', () => {
     const tagsView = useTagsViewStore()
     addTags(tagsView, [
-      ['/demo/cache', 'DemoCache'],
-      ['/demo/tabs', 'DemoTabs'],
+      ['/demo/product', 'DemoProduct'],
       ['/demo/other', 'DemoOther'],
+      ['/demo/third', 'DemoThird'],
     ])
 
     // 关闭非当前签：页签移除但无需跳转
-    expect(tagsView.closeTab('/demo/tabs', '/demo/other')).toBeNull()
+    expect(tagsView.closeTab('/demo/other', '/demo/third')).toBeNull()
     const paths = tagsView.views.map((view) => view.fullPath)
-    expect(paths).toEqual(['/home', '/demo/cache', '/demo/other'])
-    // 关闭当前签：激活左邻（tabs 已被上一步关掉，左邻为 cache）
-    expect(tagsView.closeTab('/demo/other', '/demo/other')?.fullPath).toBe('/demo/cache')
+    expect(paths).toEqual(['/home', '/demo/product', '/demo/third'])
+    // 关闭当前签：激活左邻（other 已被上一步关掉，左邻为 product）
+    expect(tagsView.closeTab('/demo/third', '/demo/third')?.fullPath).toBe('/demo/product')
     // 固定签（首页）不可关
     expect(tagsView.closeTab('/home', '/home')).toBeNull()
     expect(tagsView.views[0].fullPath).toBe('/home')
@@ -169,24 +169,24 @@ describe('多标签状态机', () => {
   it('缓存名单跟随页签：keepAlive 过滤 + 刷新排除 + 关签释放', () => {
     const tagsView = useTagsViewStore()
     addTags(tagsView, [
-      ['/demo/cache', 'DemoCache', true],
-      ['/demo/tabs', 'DemoTabs', true],
+      ['/demo/product', 'DemoProduct', true],
+      ['/demo/list', 'DemoList', true],
       ['/demo/plain', 'DemoPlain', false],
     ])
 
-    expect(tagsView.cachedNames).toEqual(['DemoCache', 'DemoTabs'])
+    expect(tagsView.cachedNames).toEqual(['DemoProduct', 'DemoList'])
 
-    // 刷新 cache：从名单排除（卸载不进缓存）
-    tagsView.beginRefresh(tagsView.findView('/demo/cache') as TagView)
-    expect(tagsView.cachedNames).toEqual(['DemoTabs'])
+    // 刷新 product：从名单排除（卸载不进缓存）
+    tagsView.beginRefresh(tagsView.findView('/demo/product') as TagView)
+    expect(tagsView.cachedNames).toEqual(['DemoList'])
 
     // 任意路由落地结束刷新周期，名单恢复
     tagsView.addView(makeRoute())
-    expect(tagsView.cachedNames).toEqual(['DemoCache', 'DemoTabs'])
+    expect(tagsView.cachedNames).toEqual(['DemoProduct', 'DemoList'])
 
     // 关闭签即释放缓存
-    tagsView.closeTab('/demo/cache', '/demo/tabs')
-    expect(tagsView.cachedNames).toEqual(['DemoTabs'])
+    tagsView.closeTab('/demo/product', '/demo/list')
+    expect(tagsView.cachedNames).toEqual(['DemoList'])
   })
 
   it('持久化往返：变更即写 N1_TAGS，reset 清空', () => {
@@ -195,7 +195,7 @@ describe('多标签状态机', () => {
 
     expect(JSON.parse(localStorage.getItem('N1_TAGS') ?? '[]')).toHaveLength(2)
 
-    tagsView.closeTab('/demo/cache', '/home')
+    tagsView.closeTab('/demo/product', '/home')
     expect(JSON.parse(localStorage.getItem('N1_TAGS') ?? '[]')).toHaveLength(1)
 
     tagsView.reset()
@@ -206,10 +206,10 @@ describe('多标签状态机', () => {
   it('恢复校验：可解析到布局内路由的页签保留，失效签剔除', () => {
     const saved = [
       {
-        fullPath: '/demo/cache',
-        path: '/demo/cache',
-        title: '缓存演示',
-        name: 'DemoCache',
+        fullPath: '/demo/product',
+        path: '/demo/product',
+        title: '商品管理',
+        name: 'DemoProduct',
         query: {},
         affix: false,
         keepAlive: true,
@@ -242,10 +242,10 @@ describe('多标签状态机', () => {
       }
       const matched = [
         { name: 'Layout', meta: {} },
-        { name: 'Demo', meta: { title: '组件演示', icon: 'demo' } },
-        { name: 'DemoCache', meta: { title: '缓存演示', icon: 'doc' } },
+        { name: 'Demo', meta: { title: '开发示例', icon: 'demo' } },
+        { name: 'DemoProduct', meta: { title: '商品管理', icon: 'product' } },
       ]
-      return { name: 'DemoCache', matched, meta: {} } as never
+      return { name: 'DemoProduct', matched, meta: {} } as never
     })
     const router = { resolve } as unknown as Router
 
@@ -253,10 +253,10 @@ describe('多标签状态机', () => {
     tagsView.restoreFromStorage(router)
 
     expect(tagsView.isInitialized).toBe(true)
-    expect(tagsView.views.map((view) => view.fullPath)).toEqual(['/home', '/demo/cache'])
+    expect(tagsView.views.map((view) => view.fullPath)).toEqual(['/home', '/demo/product'])
     expect(tagsView.views[0].affix).toBe(true)
     // 图标按当前路由表重算（不依赖持久化字段）
-    expect(tagsView.views[1].icon).toBe('doc')
+    expect(tagsView.views[1].icon).toBe('product')
     // 恢复后写回净化结果
     expect(JSON.parse(localStorage.getItem('N1_TAGS') ?? '[]')).toHaveLength(2)
   })

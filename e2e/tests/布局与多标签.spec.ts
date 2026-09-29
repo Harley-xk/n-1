@@ -1,10 +1,36 @@
 // 纯前端链路用例：验证批次三布局门面——骨架渲染、菜单导航、多标签操作（开 / 关 / 批量 / 刷新）、侧栏收起与主题切换（认证态经路由 mock 建立）
+// 页签 / 缓存验收载体自批次六起为商品管理页（原「组件演示」两页已删除）
 import { expect, test } from '@playwright/test'
 
 import { mockAuthState } from './support/auth'
 
+/**
+ * 商品页数据接口 mock：本组为纯前端链路，避免页面请求带假 token 打到真实后端被 401 整页接管。
+ * 注意用函数谓词而非 glob 匹配——分页请求携带 pageNo / pageSize 等 query，glob 不匹配带 query 的 URL，
+ * 一旦漏 mock 命中真后端，401 会触发 http 层整页跳登录（假 token 又被守卫弹回首页，症状极具迷惑性）
+ */
+async function mockProductApi(page: import('@playwright/test').Page): Promise<void> {
+  await page.route(
+    url => url.pathname === '/api/system/dict/list-all-simple',
+    route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 0, data: [] }),
+    }),
+  )
+  await page.route(
+    url => url.pathname === '/api/demo/product/page',
+    route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 0, data: { list: [], total: 0 } }),
+    }),
+  )
+}
+
 test.beforeEach(async ({ page }) => {
   await mockAuthState(page)
+  await mockProductApi(page)
 })
 
 /** 页签元素定位（fullPath 为 data-fullpath 属性） */
@@ -33,49 +59,55 @@ test.describe('布局门面', () => {
   test('菜单导航落签，关闭页签回到相邻签', async ({ page }) => {
     await page.goto('/')
 
-    // 展开演示目录并进入缓存演示
-    await page.getByRole('menuitem', { name: '组件演示' }).click()
-    await page.getByRole('menuitem', { name: '缓存演示' }).click()
-    await expect(page.getByText('keep-alive 缓存演示')).toBeVisible()
-    await expect(tagOf(page, '/demo/cache')).toBeVisible()
+    // 展开开发示例目录并进入商品管理
+    await page.getByRole('menuitem', { name: '开发示例' }).click()
+    await page.getByRole('menuitem', { name: '商品管理' }).click()
+    await expect(page.getByPlaceholder('名称模糊匹配')).toBeVisible()
+    await expect(tagOf(page, '/demo/product')).toBeVisible()
 
     // 关闭当前签：回到左邻（首页固定签）
-    await tagOf(page, '/demo/cache').hover()
-    await tagOf(page, '/demo/cache').locator('.n1-tag-close').click()
-    await expect(tagOf(page, '/demo/cache')).toHaveCount(0)
+    await tagOf(page, '/demo/product').hover()
+    await tagOf(page, '/demo/product').locator('.n1-tag-close').click()
+    await expect(tagOf(page, '/demo/product')).toHaveCount(0)
     await expect(page.getByRole('heading', { name: 'n-1' })).toBeVisible()
   })
 })
 
 test.describe('多标签操作', () => {
   test('query 分立页签与右键批量关闭', async ({ page }) => {
-    await page.goto('/demo/tabs')
+    // 直链带不同 query 依次落地：fullPath 一签，分立三个页签（含无参数原签）。
+    // 每次落地即断言落签——整页导航的落签在路由守卫异步完成后发生，连续 goto 会打断上一次落签
+    await page.goto('/demo/product')
+    await expect(tagOf(page, '/demo/product')).toBeVisible()
+    await page.goto('/demo/product?from=a')
+    await expect(tagOf(page, '/demo/product?from=a')).toBeVisible()
+    await page.goto('/demo/product?from=b')
+    await expect(tagOf(page, '/demo/product?from=b')).toBeVisible()
 
-    // 打开 tab=1 与 tab=2：fullPath 一签，分立三个页签（含无参数原签）
-    await page.getByRole('button', { name: '打开 tab=1' }).click()
-    await page.getByRole('button', { name: '打开 tab=2' }).click()
-    await expect(tagOf(page, '/demo/tabs?tab=1')).toBeVisible()
-    await expect(tagOf(page, '/demo/tabs?tab=2')).toBeVisible()
-
-    // 在 tab=2 签上右键「关闭其他」：仅剩首页与 tab=2
-    await tagOf(page, '/demo/tabs?tab=2').click({ button: 'right' })
+    // 在 from=b 签上右键「关闭其他」：仅剩首页与 from=b
+    await tagOf(page, '/demo/product?from=b').click({ button: 'right' })
     await contextItem(page, '关闭其他').click()
-    await expect(tagOf(page, '/demo/tabs')).toHaveCount(0)
-    await expect(tagOf(page, '/demo/tabs?tab=1')).toHaveCount(0)
-    await expect(tagOf(page, '/demo/tabs?tab=2')).toBeVisible()
+    await expect(tagOf(page, '/demo/product')).toHaveCount(0)
+    await expect(tagOf(page, '/demo/product?from=a')).toHaveCount(0)
+    await expect(tagOf(page, '/demo/product?from=b')).toBeVisible()
   })
 
   test('刷新页签强制重建实例（keep-alive 缓存排除）', async ({ page }) => {
     await page.goto('/')
 
-    await page.getByRole('menuitem', { name: '组件演示' }).click()
-    await page.getByRole('menuitem', { name: '缓存演示' }).click()
-    // 计数 +1 后刷新：实例重建，计数归零
-    await page.getByRole('button', { name: '计数 +1' }).click()
-    await expect(page.locator('.el-tag', { hasText: '1' })).toBeVisible()
-    await tagOf(page, '/demo/cache').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: '开发示例' }).click()
+    await page.getByRole('menuitem', { name: '商品管理' }).click()
+    // 搜索关键字即页面状态：切走切回应保留（keep-alive 缓存生效）
+    const keyword = page.getByPlaceholder('名称模糊匹配')
+    await keyword.fill('蓝牙')
+    await tagOf(page, '/home').click()
+    await tagOf(page, '/demo/product').click()
+    await expect(keyword).toHaveValue('蓝牙')
+
+    // 右键「刷新页签」：缓存排除 + 实例重建，关键字清空
+    await tagOf(page, '/demo/product').click({ button: 'right' })
     await contextItem(page, '刷新页签').click()
-    await expect(page.locator('.el-tag', { hasText: '0' })).toBeVisible()
+    await expect(keyword).toHaveValue('')
   })
 })
 

@@ -13,11 +13,11 @@ describe('路由树转菜单树', () => {
       },
       {
         path: 'demo',
-        meta: { title: '组件演示', icon: 'demo' },
+        meta: { title: '开发示例', icon: 'demo' },
         children: [
           {
-            path: 'cache',
-            meta: { title: '缓存演示' },
+            path: 'product',
+            meta: { title: '商品管理', icon: 'product' },
           },
         ],
       },
@@ -28,7 +28,7 @@ describe('路由树转菜单树', () => {
     expect(tree).toHaveLength(2)
     expect(tree[0]).toMatchObject({ path: '/home', title: '首页', icon: 'home' })
     expect(tree[1].children).toHaveLength(1)
-    expect(tree[1].children[0].path).toBe('/demo/cache')
+    expect(tree[1].children[0].path).toBe('/demo/product')
   })
 
   it('hidden 路由不进菜单（刷新中转等隐藏子页）', () => {
@@ -67,7 +67,7 @@ describe('菜单权限过滤', () => {
         { path: 'role', meta: { title: '角色管理', permission: 'system:role:query' } },
       ],
     },
-    { path: 'demo', meta: { title: '组件演示' } },
+    { path: 'demo', meta: { title: '开发示例' } },
   ] as unknown as RouteRecordRaw[]
 
   it('无权限要求的节点保留；有权限要求且无权的节点整棵剔除', () => {

@@ -16,7 +16,7 @@ export interface PermissionGroup {
   points: PermissionPointVO[]
 }
 
-/** 域标识 → 中文名（与后端权限注册表的登记顺序对应） */
+/** 域标识 → 中文名（与后端权限注册表的登记顺序对应；新模块接入时在此登记，见新模块接入指南第 7 步） */
 const DOMAIN_LABELS: Record<string, string> = {
   user: '用户管理',
   role: '角色管理',
@@ -26,6 +26,7 @@ const DOMAIN_LABELS: Record<string, string> = {
   post: '岗位管理',
   'operate-log': '操作日志',
   'login-log': '登录日志',
+  product: '商品管理',
 }
 
 /** 按权限串域段分组（code 形如 system:user:query，第二段为域） */
