@@ -108,17 +108,36 @@ export function validatePermissionPoints(
   return merged
 }
 
+/** 业务模块的权限点接入定义（n-2 PermissionProvider 的 NestJS 翻译：注册表实例注册 + 模块生命周期钩子） */
+export interface PermissionModuleDefinition {
+  /** 模块注册名，须与权限串首段一致（如 'demo'） */
+  readonly module: string
+  /** 该模块的权限点清单 */
+  readonly points: readonly PermissionPoint[]
+}
+
 /**
- * 权限点注册表：启动期经 validatePermissionPoints 校验后登记 system 清单。
+ * 权限点注册表（多模块聚合）：system 清单构造期登记，业务模块在自身 onModuleInit 中
+ * 调 registerModule 接入（demo 为首个样板，见 docs/指南/新模块接入指南.md 第 3 步）。
+ * 注册即时校验（模块名重复 / 首段不符 / 权限串全局冲突均启动期抛错，不晚于端口监听）。
  * 提供读取侧全集（super_admin 语义）与写入侧登记校验（读写不对称策略，见权限设计 §4.3）。
- * 批次六样板模块接入时扩展为 PermissionProvider 多模块聚合形态。
  */
 @Injectable()
 export class PermissionRegistry {
-  private readonly points: ReadonlyMap<string, PermissionPoint>
+  private readonly modules = new Set<string>()
+  private points: ReadonlyMap<string, PermissionPoint>
 
   constructor() {
     this.points = validatePermissionPoints(SYSTEM_MODULE_NAME, SYSTEM_PERMISSIONS)
+    this.modules.add(SYSTEM_MODULE_NAME)
+  }
+
+  /** 业务模块接入入口：即时校验并合入聚合清单（各模块 onModuleInit 阶段调用，全部完成先于端口监听） */
+  registerModule(def: PermissionModuleDefinition): void {
+    if (this.modules.has(def.module))
+      throw new Error(`权限模块「${def.module}」重复注册`)
+    this.points = validatePermissionPoints(def.module, def.points, this.points)
+    this.modules.add(def.module)
   }
 
   /** 全部已登记权限串（super_admin 全集语义的数据源；注册表新增权限点超管自动拥有） */

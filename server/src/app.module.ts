@@ -24,6 +24,7 @@ import { SignatureGuard } from './common/signature/signature.guard'
 import { SignatureModule } from './common/signature/signature.module'
 import { AuditSubscriber } from './common/subscribers/audit.subscriber'
 import configuration from './config/configuration'
+import { DemoModule } from './modules/demo/demo.module'
 import { JwtAuthGuard } from './modules/system/guards/jwt-auth.guard'
 import { PermissionsGuard } from './modules/system/guards/permissions.guard'
 import { OperateLogInterceptor } from './modules/system/operate-log/operate-log.interceptor'
@@ -74,6 +75,8 @@ import { SystemModule } from './modules/system/system.module'
     SignatureModule,
     // 系统管理：认证 / 用户 / 角色 + 权限注册表（全局模块，导出 Guard 依赖的服务）
     SystemModule,
+    // 开发示例：示例商品单表 CRUD（业务模块样板，接入权限注册表的多模块聚合）
+    DemoModule,
   ],
   controllers: [AppController],
   providers: [

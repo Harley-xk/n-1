@@ -1,0 +1,20 @@
+/*
+ * 作者: Harley-xk
+ * 创建: 2026-09-29
+ *
+ * 描述: demo 模块常量：种子数据固定 id（与迁移脚本同源；id 段 05x/06x，避开 system 的 01x~04x 段）
+ */
+
+/** 字典类型「示例商品分类」固定 id */
+export const DICT_TYPE_DEMO_CATEGORY_ID = '00000000-0000-4000-8000-000000000051'
+
+/** 字典数据固定 id：数码 / 服饰 / 食品 / 图书 */
+export const DICT_DATA_DEMO_DIGITAL_ID = '00000000-0000-4000-8000-000000000052'
+export const DICT_DATA_DEMO_CLOTHING_ID = '00000000-0000-4000-8000-000000000053'
+export const DICT_DATA_DEMO_FOOD_ID = '00000000-0000-4000-8000-000000000054'
+export const DICT_DATA_DEMO_BOOK_ID = '00000000-0000-4000-8000-000000000055'
+
+/** 示例商品固定 id（3 条种子，示范数据形态） */
+export const PRODUCT_EARPHONES_ID = '00000000-0000-4000-8000-000000000061'
+export const PRODUCT_TSHIRT_ID = '00000000-0000-4000-8000-000000000062'
+export const PRODUCT_BOOK_ID = '00000000-0000-4000-8000-000000000063'

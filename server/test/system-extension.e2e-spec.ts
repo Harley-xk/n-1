@@ -294,7 +294,7 @@ describe('SystemExtension (e2e)', () => {
       .expect((res) => {
         const body = res.body as ApiResponse<PermissionPoint[]>
         expect(body.code).toBe(0)
-        expect(body.data?.length).toBe(30)
+        expect(body.data?.length).toBe(34)
         expect(body.data?.map(point => point.code)).toContain('system:dict:query')
         expect(body.data?.every(point => typeof point.label === 'string' && point.label.length > 0)).toBe(true)
       })
