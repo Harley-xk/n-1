@@ -18,11 +18,7 @@ export function formatDateTime(timestamp: number | null | undefined): string {
   )
 }
 
-/** Element Plus 表格时间列通用 formatter（cellValue 为毫秒时间戳，签名适配 el-table-column :formatter） */
-export function dateTimeColumnFormatter(
-  _row: unknown,
-  _column: unknown,
-  cellValue: number | null | undefined,
-): string {
+/** N1Table / vxe-table 时间列通用 formatter（cellValue 为毫秒时间戳，签名适配 vxe formatter） */
+export function dateTimeFormatter({ cellValue }: { cellValue: number | null | undefined }): string {
   return formatDateTime(cellValue)
 }

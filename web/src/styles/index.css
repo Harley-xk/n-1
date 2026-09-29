@@ -4,6 +4,7 @@
  */
 @import "./tokens.css";
 @import "./element-overrides.css";
+@import "./vxe-overrides.css";
 
 * {
   box-sizing: border-box;

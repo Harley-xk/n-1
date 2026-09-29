@@ -1,0 +1,81 @@
+/*
+ * vxe-table 主题覆写：--vxe-ui-* 变量对齐 --n1-* 设计 token
+ * --n1-* 明暗双套，暗色下自动翻转，无需 vxe 暗色主题包；映射清单见 docs/前端/表格组件设计.md §5
+ */
+
+:root {
+  /* 字体与基础 */
+  --vxe-ui-font-family: var(--n1-font-family);
+  --vxe-ui-font-size-default: 14px;
+  --vxe-ui-base-border-radius: var(--n1-radius-small);
+
+  /* 主色与文字 */
+  --vxe-ui-primary-color: var(--n1-color-primary);
+  --vxe-ui-primary-darken-color: var(--n1-color-primary-hover);
+  --vxe-ui-font-primary-color: var(--n1-text-1);
+  --vxe-ui-font-secondary-color: var(--n1-text-2);
+  --vxe-ui-font-disabled-color: var(--n1-text-3);
+
+  /* 表格底与边框 */
+  --vxe-ui-layout-background-color: var(--n1-card-bg);
+  --vxe-ui-table-border-color: var(--n1-border);
+
+  /* 表头（浅底表头 + 次级文字色 + 中等字重，对齐原 el-table 视觉） */
+  --vxe-ui-table-header-background-color: var(--n1-table-header-bg);
+  --vxe-ui-table-header-font-color: var(--n1-text-2);
+  --vxe-ui-table-header-font-weight: 500;
+
+  /* 斑马纹与行 hover（条纹行 hover 单独加深一档，与普通行 hover 保持区分度） */
+  --vxe-ui-table-row-hover-background-color: var(--n1-fill-hover);
+  --vxe-ui-table-row-striped-background-color: var(--n1-table-stripe-bg);
+  --vxe-ui-table-row-hover-striped-background-color: var(--n1-table-stripe-hover-bg);
+
+  /* 单元格密度：该变量为单值、被 vxe 逐边应用（is--pg-* 类），
+     左右 16px 留白防内容贴边；竖直密度在下方规则压回 10px */
+  --vxe-ui-table-cell-padding-default: 16px;
+}
+
+/* 竖直密度（vxe 单值 padding 变量无法分边，覆写回 10px 保持行高 48 的舒适密度） */
+.vxe-table .is--pg-top > .vxe-cell {
+  padding-top: 10px;
+}
+
+.vxe-table .is--pg-bottom > .vxe-cell {
+  padding-bottom: 10px;
+}
+
+/* ============ 列拖拽把手：hover 表头浮现于列末尾 ============ */
+
+/* vxe 把手 DOM 位于标题 span 之前（block 布局无法用 order 调序），
+   改绝对定位到单元格右缘：默认隐藏、hover 该列表头时浮现 */
+.vxe-table .vxe-header--column > .vxe-cell {
+  position: relative;
+}
+
+.vxe-table .vxe-header--column .vxe-cell--drag-handle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  color: var(--n1-text-3);
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
+}
+
+/* 暗色下提亮一档保证可见 */
+html.dark .vxe-table .vxe-header--column .vxe-cell--drag-handle {
+  color: var(--n1-text-2);
+}
+
+/* 绝对定位后把手脱流，vxe 自带的标题 0.5em 左间隙失去意义，重置 */
+.vxe-table .vxe-header--column .vxe-cell--drag-handle + span {
+  padding-left: 0;
+}
+
+/* hover 或拖拽中浮现 */
+.vxe-table .vxe-header--column:hover .vxe-cell--drag-handle,
+.vxe-table .vxe-header--column .vxe-cell--drag-handle:active {
+  opacity: 1;
+}

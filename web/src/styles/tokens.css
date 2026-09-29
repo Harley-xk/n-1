@@ -20,6 +20,8 @@
   --n1-card-border: #e5e9ee;
   --n1-card-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
   --n1-table-header-bg: #f7f9fa;
+  --n1-table-stripe-bg: #f6f8fa;
+  --n1-table-stripe-hover-bg: #e8eef5;
 
   /* 文字 */
   --n1-text-1: #1f2733;
@@ -63,6 +65,8 @@ html.dark {
   --n1-card-border: #2a2f3a;
   --n1-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   --n1-table-header-bg: #22262e;
+  --n1-table-stripe-bg: rgba(255, 255, 255, 0.05);
+  --n1-table-stripe-hover-bg: rgba(255, 255, 255, 0.1);
 
   --n1-text-1: #e7ebf0;
   --n1-text-2: #a6b0c0;

@@ -2,16 +2,20 @@
  * 作者: Harley-xk
  * 创建: 2026-09-10
  *
- * 描述: 前端应用入口：装配 Pinia、路由守卫与 Element Plus（中文语言包 + 暗色变量）并挂载根组件
+ * 描述: 前端应用入口：装配 Pinia、路由守卫、Element Plus（中文语言包 + 暗色变量）与 vxe-table 并挂载根组件
  */
 
 import ElementPlus from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
+import VxeUIAll from 'vxe-pc-ui'
+import VxeUITable from 'vxe-table'
 
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
+import 'vxe-pc-ui/lib/style.css'
+import 'vxe-table/lib/style.css'
 import '@/styles/index.css'
 
 import App from './App.vue'
@@ -26,6 +30,8 @@ app.use(createPinia())
 setupRouterGuard(router)
 app.use(router)
 app.use(ElementPlus, { locale: zhCn })
+// 表格组件 vxe-table（默认中文 locale），主题经 styles/vxe-overrides.css 对齐 --n1-* token
+app.use(VxeUIAll).use(VxeUITable)
 // v-hasPermi 权限指令（页内按钮 / 区块粒度控制）
 app.directive('hasPermi', hasPermi)
 
