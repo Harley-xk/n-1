@@ -21,6 +21,8 @@ n-1 是一套**企业级全栈项目框架底座**，面向 **vibe coding first*
 - **为 AI 编程而生**：规则目录（rules/）+ 文档先行 + ESLint 保存即修复 + lefthook 提交门禁 + `pnpm check` 一键自检 + Playwright 自动验收，让 vibe coding 产出的代码风格统一、质量可控
 - **约定优于配置**：统一的目录结构、配置管理与编码约定，降低团队协作与 AI 辅助开发成本
 
+底座六大批次已全部落地（见[路线图](#路线图)）：开箱即含**登录认证 + RBAC 权限**（菜单 / 路由 / 按钮三级）、**系统管理**（用户 / 角色 / 部门 / 岗位 / 字典 / 参数 / 操作与登录日志）、**主布局系统**（多标签页 / 明暗主题 / 组件槽位），以及一个贯通全链路的**商品管理样板模块**作为新模块接入范本。
+
 ## 技术栈
 
 | 端 | 技术 | 说明 |
@@ -40,22 +42,27 @@ n-1 是一套**企业级全栈项目框架底座**，面向 **vibe coding first*
 n-1/
 ├── server/               # 后端服务（NestJS 11 + TypeORM + PostgreSQL）
 │   ├── src/
+│   │   ├── common/       # 横切设施：拦截器 / 过滤器 / 守卫 / 中间件 / 审计 / 错误码 / 签名
 │   │   ├── config/       # 环境配置工厂
-│   │   ├── modules/      # 业务模块（按领域拆分）
-│   │   ├── app.module.ts # 根模块：配置 + 数据库装配
+│   │   ├── migrations/   # 数据库迁移（唯一建表通道）
+│   │   ├── modules/      # 业务模块（system 认证授权与系统管理 / demo 样板业务模块）
+│   │   ├── app.module.ts # 根模块：配置 + 数据库 + 全局 Guard 链装配
 │   │   └── main.ts       # 应用入口：全局管道 / Swagger / 启动
-│   ├── test/             # e2e 测试
+│   ├── test/             # 后端 API e2e 测试
 │   └── .env.example      # 环境变量模板
 ├── web/                  # 前端应用（Vue 3 + Pinia + Element Plus）
 │   └── src/
-│       ├── api/          # axios 实例与接口封装
-│       ├── router/       # 路由
-│       ├── stores/       # Pinia 状态
-│       ├── views/        # 页面
+│       ├── api/          # axios 实例与接口封装（token 注入 / 401 接管）
+│       ├── layouts/      # 主布局（顶栏 / 侧栏 / 标签栏 / 内容卡片）
+│       ├── framework/    # 组件槽位注册表（业务覆盖布局组件）
+│       ├── router/       # 路由（modules/ 按域拆分）与登录守卫
+│       ├── stores/       # Pinia 状态（外观 / 多标签 / 认证）
+│       ├── directives/   # 自定义指令（v-hasPermi 按钮级权限）
+│       ├── views/        # 页面（登录 / 系统管理 / 开发示例）
 │       └── main.ts       # 应用入口
 ├── e2e/                  # 浏览器端到端测试（Playwright，全链路验收）
-│   └── tests/            # 用例：首页展示（纯前端）、后端连通性（服务就绪时执行）
-├── docs/                 # 开发文档（中文维护）
+│   └── tests/            # 用例：首页 / 登录链路 / 布局与多标签 / 系统管理 / 开发示例 / 后端连通性
+├── docs/                 # 开发文档（中文维护：架构 / 指南 / 决策 ADR / 批次规划）
 ├── rules/                # AI 工作规则（base.md 为最高优先级）
 ├── scripts/              # 工程化脚本
 ├── .vscode/              # VS Code 调试配置（launch / tasks / 推荐扩展 / 仓库设置）
@@ -85,7 +92,10 @@ pnpm install
 # 3. 准备后端环境变量（按独立部署的 PostgreSQL 实际连接信息修改）
 cp server/.env.example server/.env    # Windows: copy server\.env.example server\.env
 
-# 4. 并行启动前后端开发服务
+# 4. 执行数据库迁移（唯一建表通道：建表 + 种子数据与初始账号）
+pnpm --filter server migration:run
+
+# 5. 并行启动前后端开发服务
 pnpm dev
 ```
 
@@ -98,7 +108,7 @@ pnpm dev
 | 健康检查 | http://localhost:3000/api/health |
 | Swagger 接口文档 | http://localhost:3000/api-docs |
 
-> 首页中的「后端连通性检查」卡片可用于验证前后端链路是否打通。
+> 内置管理员账号 **admin / admin123**（由种子迁移创建，初始口令可经参数 `system.user.init-password` 配置）；首页的「后端连通性检查」卡片可用于验证前后端链路是否打通。
 
 ## 常用命令
 
@@ -113,7 +123,8 @@ pnpm dev
 | `pnpm check` | **一键自检**：lint + 类型检查 + 前后端单元测试 + 后端 API e2e |
 | `pnpm test` | 运行前后端单元测试（server Jest / web Vitest） |
 | `pnpm test:e2e` | 运行后端 API e2e 测试（无需真实数据库） |
-| `pnpm test:e2e:web` | 运行浏览器端到端测试（Playwright，自动拉起前端，复用本机 Chrome / Edge，无需下载浏览器） |
+| `pnpm test:e2e:web` | 运行浏览器端到端测试（Playwright，条件双 webServer 自动拉起前后端，复用本机 Chrome / Edge；无库环境自动回退为仅前端） |
+| `pnpm --filter server migration:run` | 执行数据库迁移（另有 `migration:generate -- src/migrations/<名称>` 生成、`migration:revert` 回退） |
 | `pnpm lint` | 前后端 ESLint 检查并自动修复 |
 | `pnpm type-check` | 前端类型检查（vue-tsc） |
 
@@ -121,19 +132,21 @@ pnpm dev
 
 ## 开发指南
 
-### 新增后端业务模块
+### 新增业务模块
 
-推荐使用 NestJS CLI 生成骨架，随后补充实现：
+后端模块按领域放 `server/src/modules/<领域>/`，推荐用 NestJS CLI 生成骨架：
 
 ```bash
-pnpm --filter server exec nest g resource modules/users
+pnpm --filter server exec nest g resource modules/<领域>
 ```
 
-模块内通过 `TypeOrmModule.forFeature([User])` 注册实体后即被自动加载。开发环境下 `DB_SYNC=true` 会自动同步表结构；**生产环境必须关闭并改用迁移**。
+**建表一律走迁移**（`DB_SYNC` 已默认关闭，仅开发兜底）：实体变更后 `migration:generate` 生成迁移文件，`migration:run` 落库。
+
+权限点注册（模块 `permissions.ts` + `registerModule` 聚合）、错误码分段登记、前端页面 / 路由 / 按钮权限的完整接入流程见 [新模块接入指南](docs/指南/新模块接入指南.md)，贯通全链路的样板参考 `modules/demo` 商品模块。
 
 ### 新增前端页面
 
-在 `web/src/views/` 下新建组件，并在 `web/src/router/index.ts` 注册路由；页面标题取自 `RouteMeta.title`。
+页面放 `web/src/views/`（按域建目录），路由在 `web/src/router/modules/` 按域拆分注册。侧栏菜单由 Layout 子路由树**按权限过滤**自动生成；接口级权限通过路由 `meta.permission` 与 `v-hasPermi` 指令控制（详见 [权限设计](docs/指南/权限设计.md)）。
 
 ### VS Code 一键调试
 
@@ -192,6 +205,13 @@ pnpm --filter server exec nest g resource modules/users
 文档集中维护在 [docs/](docs/) 目录，全部使用中文撰写，按模块和功能分门别类（目录导航见 [docs/README.md](docs/README.md)）：
 
 - [架构设计](docs/架构设计.md) —— 总体架构、分层设计、配置与数据访问约定
+- [新模块接入指南](docs/指南/新模块接入指南.md) —— 从建表到页面的完整业务模块接入流程（样板：商品模块）
+- [权限设计](docs/指南/权限设计.md) —— RBAC 权限点注册表、后端 Guard 链与前端三级权限过滤
+- [统一响应与异常处理设计](docs/指南/统一响应与异常处理设计.md) —— 九位分段错误码与全局异常处理
+- [请求签名验证设计](docs/指南/请求签名验证设计.md) —— 接口签名机制（Guard 链首环）
+- [布局与风格设计](docs/前端/布局与风格设计.md) —— 主布局系统与 `--n1-*` 设计 token / 明暗主题
+
+各批次设计文档见 [docs/规划/](docs/规划/)，决策记录（ADR）见 [docs/决策/](docs/决策/)。
 
 业务开发遵循**文档先行**（[rules/base.md](rules/base.md)）：先在 `docs/` 对应模块目录下编写设计文档，再写代码。
 
@@ -201,14 +221,20 @@ pnpm --filter server exec nest g resource modules/users
 
 - [base.md](rules/base.md) —— 最高优先级基础约定：文档先行、完成定义（`pnpm check`）、提交信息规范、文件头部注释（仅代码文件署名）、MIT 开源许可
 - [code-style.md](rules/code-style.md) —— 代码风格：无分号、单引号、2 空格缩进、import 分组排序、后端 Nest Logger 等，由 ESLint（`@stylistic` + `import-x`）自动强制
+- [testing.md](rules/testing.md) —— 测试策略：风险驱动分层取舍（何时写 / 写在哪层 / 写到什么程度）
 
 ## 路线图
 
-- [ ] 统一响应结构与全局异常处理
-- [ ] 认证与授权（JWT + RBAC）
-- [ ] 数据库迁移（TypeORM Migrations）
+- [x] 工程化快赢与契约定稿：九位分段错误码、访问日志、安全响应头、prettier 门禁（批次一）
+- [x] 数据层基建：审计公共实体、蛇形命名、TypeORM 迁移体系（批次二）
+- [x] 前端门面：主布局系统、明暗主题、多标签页、组件槽位（批次三）
+- [x] 认证与授权：JWT + RBAC，签名 → 认证 → 权限三级 Guard 链（批次四）
+- [x] 系统管理：用户 / 角色 / 部门 / 岗位 / 字典 / 参数 / 操作与登录日志（批次五）
+- [x] 样板业务模块：商品管理全链路（迁移 / 权限 / 字典 / 操作日志 / 页面，批次六）
 - [ ] 前端按需引入与构建优化
 - [ ] CI/CD 与代码质量门禁
+
+> 各批次设计文档见 [docs/规划/](docs/规划/)，消化吸收全过程见 [n-2 消化吸收规划](docs/规划/n-2消化吸收规划.md)。
 
 ## 许可证
 
