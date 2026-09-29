@@ -18,11 +18,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **后端**（`server/src/`）：全局 Guard 链**签名 → JWT 认证 → 权限**（`@Public()` 豁免 JWT、`@SkipSignature()` 豁免签名、`@RequirePermissions` OR 语义）；无状态 JWT（Bearer + 逐请求查库存在性校验，禁用 / 删除即时失效，8h 有效期，ADR-003）；权限点注册表**多模块聚合**（模块 `permissions.ts` + `onModuleInit` 中 `registerModule` 接入，启动期 fail-fast：模块重名 / 首段不符 / 权限串冲突即抛错；现行 34 项，super_admin 全集 = `allCodes()` 后端收敛）；system 模块九域（认证 / 用户 / 角色 / 部门 / 岗位 / 字典 / 参数 / 操作日志 / 登录日志）+ demo 样板商品模块（新业务模块照 `modules/demo` 执行，八步清单见 [新模块接入指南](docs/指南/新模块接入指南.md)）；横切设施——`BaseEntity`（uuid 主键 + 审计列 + 软删，业务实体一律继承）、`AuditSubscriber` 审计填充、蛇形命名、异步任务队列 `AsyncTaskQueue`（并发 4 / 队容 200 / 队满降级当场执行）、`@OperateLog` 操作日志拦截器（参数序列化截 2000 + password 掩敏）、访问日志与安全响应头中间件、九位分段错误码（通用 000 / system 001 / demo 002，ADR-002）。
 
-**前端**（`web/src/`）：主布局系统（顶栏一整条 / 白卡片侧栏可收起 / 多标签页 fullPath 一签 / 连体内容卡唯一滚动容器，视觉方案「青碧卡片浮起」见 [布局与风格设计](docs/前端/布局与风格设计.md)）；`--n1-*` 设计 token 明暗双套 + 三态主题 + 992px 断点自动收起；组件槽位注册表（6 槽位，业务 `registerComponentOverride` 覆盖）；登录链路（登录页 / 五分支路由守卫 / `v-hasPermi` 指令 / http 层 401 清令牌整页接管 / auth store）；dict 三件套（store / `DictTag` / `DictSelect`）；系统管理八页与商品管理页；**路由 name 一律 PascalCase**（keep-alive 缓存键契约：路由 name ↔ 页面 `defineOptions({ name })` ↔ 缓存名单）；业务组件只消费 `--n1-*` token，不硬编码色值。
+**前端**（`web/src/`）：主布局系统（顶栏一整条 / 白卡片侧栏可收起 / 多标签页 fullPath 一签 / 连体内容卡唯一滚动容器，视觉方案「青碧卡片浮起」见 [布局与风格设计](docs/前端/布局与风格设计.md)）；`--n1-*` 设计 token 明暗双套 + 三态主题 + 992px 断点自动收起；组件槽位注册表（6 槽位，业务 `registerComponentOverride` 覆盖）；登录链路（登录页 / 五分支路由守卫 / `v-hasPermi` 指令 / http 层 401 清令牌整页接管 / auth store）；dict 三件套（store / `DictTag` / `DictSelect`）；**列表表格统一 `N1Table` 封装（vxe-table v4 与 Element Plus 共存，表格场景一律 N1Table）——列宽 / 列序拖拽默认开启，调整结果按路由 name（抽屉表格传 `persistKey`）持久化 localStorage `N1_TABLE_COLS`**（设计见 [表格组件设计](docs/前端/表格组件设计.md)）；系统管理八页与商品管理页；**路由 name 一律 PascalCase**（keep-alive 缓存键契约：路由 name ↔ 页面 `defineOptions({ name })` ↔ 缓存名单）；业务组件只消费 `--n1-*` token，不硬编码色值。
 
 **关键约定**：种子账号 admin / admin123（初始口令经参数 `system.user.init-password` → env → admin123 三级兜底）；**迁移为唯一建表通道**（本地 `.env` 的 `DB_SYNC` 已关，生产强制关闭并告警）；前端端口 **5180**（`strictPort`，避开 Vite 默认 5173 的本机多项目冲突）；`@nestjs/jwt` 锁 **11.x**（12 为 ESM-only，Jest CJS 不兼容）。
 
-**验证基线**：`pnpm check` 全绿（server 单测 202 + e2e 41、web 单测 84）、浏览器 e2e 23 用例（首页 / 登录链路 / 布局与多标签 / 系统管理 / 开发示例 / 后端连通性）。
+**验证基线**：`pnpm check` 全绿（server 单测 202 + e2e 41、web 单测 100）、浏览器 e2e 23 用例（首页 / 登录链路 / 布局与多标签 / 系统管理 / 开发示例 / 后端连通性）。
 
 ## 语言约定
 
@@ -94,6 +94,7 @@ VS Code 调试：`.vscode/launch.json` 提供三个一键配置（仅前端 / �
 - 入口 `src/main.ts`：装配 Pinia、路由守卫、Element Plus（中文 locale，全量引入 + 暗色 css-vars）
 - **主布局 `src/layouts/default/`**（顶栏 / 侧栏 / 标签栏 / 内容卡片）+ **槽位注册表 `src/framework/slots/`**（业务覆盖机制），设计与视觉 token 见 [布局与风格设计](docs/前端/布局与风格设计.md)；业务组件只消费 `--n1-*` token，不硬编码色值
 - **API 调用统一走 `src/api/http.ts` 的 axios 实例**（baseURL 来自 `VITE_API_BASE_URL`），组件内不直接创建 axios；token 自动注入（读 N1_TOKEN），401 清令牌整页跳 `/login?redirect=`，业务错误 reject `ApiError`（携分段 code）
+- **列表表格一律用 `src/components/N1Table/`**（vxe-table v4 薄封装：声明式列配置 + 单元格插槽桥接 + 列宽 / 列序拖拽与按路由持久化），与 Element Plus 共存——表单 / 弹窗 / 消息 / 分页器等仍用 EP，分页保持 `el-pagination`；设计见 [表格组件设计](docs/前端/表格组件设计.md)
 - 状态按领域拆分至 `src/stores/`（app 外观 / tags-view 多标签 / auth 认证）；路由在 `src/router/index.ts` 静态注册（业务模块拆 `router/modules/` 文件后合并），守卫在 `router/guard.ts`（登录态校验 + `meta.permission` 无权直链跳 404）；菜单由 Layout 子路由树**按权限过滤**生成（ADR-001）；页内按钮粒度用 `v-hasPermi` 指令；**路由 name 一律 PascalCase**（keep-alive 缓存键契约）
 - `@` 别名指向 `src/`；TypeScript 项目引用结构（自写 tsconfig.app / tsconfig.node），类型检查用 `vue-tsc --build`
 - 单元测试用 Vitest（jsdom 环境 + `@vue/test-utils` 支持组件测试；配置内嵌 `vite.config.ts` 的 `test` 字段，用例与源码同目录 `*.spec.ts`）
