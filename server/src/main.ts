@@ -31,7 +31,7 @@ async function bootstrap() {
     }),
   )
 
-  // 允许跨域（开发阶段前端 5173 端口访问后端 3000 端口）
+  // 允许跨域（开发阶段前端 5180 端口访问后端 3000 端口）
   app.enableCors()
 
   // 启用关停钩子：SIGTERM / app.close() 时触发各 provider 的 onApplicationShutdown

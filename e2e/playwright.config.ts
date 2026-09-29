@@ -1,4 +1,4 @@
-// Playwright 浏览器端到端测试配置：条件双 webServer（前端 5173 + 后端 3000）。
+// Playwright 浏览器端到端测试配置：条件双 webServer（前端 5180 + 后端 3000）。
 // 后端是否自动拉起由 detect-backend.mjs 同步探测决定（3000 已有服务则复用、数据库可达才拉起）；
 // 无库环境不注册后端 webServer，全链路用例交由 tests/后端连通性.spec.ts 的探测自动跳过。
 // 浏览器复用本机已安装的 Chrome / Edge（channel 方式，无需下载 chromium）：
@@ -30,7 +30,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5180',
     trace: 'on-first-retry',
   },
   projects: [
@@ -50,7 +50,7 @@ export default defineConfig({
         {
           // 在仓库根目录执行，拉起 web 开发服务器；本地已启动则直接复用
           command: 'pnpm --filter web run dev',
-          url: 'http://localhost:5173',
+          url: 'http://localhost:5180',
           reuseExistingServer: true,
           cwd: '..',
           timeout: 60_000,
@@ -60,7 +60,7 @@ export default defineConfig({
         {
           // 无库环境兜底：仅前端（全链路用例由测试内探测自动跳过）
           command: 'pnpm --filter web run dev',
-          url: 'http://localhost:5173',
+          url: 'http://localhost:5180',
           reuseExistingServer: true,
           cwd: '..',
           timeout: 60_000,

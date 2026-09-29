@@ -70,7 +70,7 @@ VS Code 调试：`.vscode/launch.json` 提供三个一键配置（仅前端 / �
 ### 整体
 
 - 前后端同仓库、独立构建，pnpm workspace 管理
-- 端口约定：后端 **3000**（全局路由前缀 `/api`，Swagger 在 `/api-docs`）、前端 **5173**（Vite 将 `/api` 代理到 3000）、PostgreSQL **独立部署**（连接信息经 `server/.env` 配置，本机已部署实例的口令与模板默认值不同）
+- 端口约定：后端 **3000**（全局路由前缀 `/api`，Swagger 在 `/api-docs`）、前端 **5180**（Vite 将 `/api` 代理到 3000；避开 Vite 默认 5173 防本机多项目冲突，`strictPort` 占用即失败）、PostgreSQL **独立部署**（连接信息经 `server/.env` 配置，本机已部署实例的口令与模板默认值不同）
 - 请求链路：浏览器 → Vite 代理 → NestJS Controller → Service → TypeORM Repository → PostgreSQL
 
 ### 工程化设施

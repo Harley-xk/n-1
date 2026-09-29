@@ -93,7 +93,7 @@ pnpm dev
 
 | 入口 | 地址 |
 | --- | --- |
-| 前端应用 | http://localhost:5173 |
+| 前端应用 | http://localhost:5180 |
 | 后端 API | http://localhost:3000/api |
 | 健康检查 | http://localhost:3000/api/health |
 | Swagger 接口文档 | http://localhost:3000/api-docs |
