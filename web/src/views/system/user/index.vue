@@ -55,53 +55,45 @@
     </el-card>
 
     <el-card class="table-card">
-      <el-table v-loading="loading" :data="tableData" stripe>
-        <el-table-column prop="username" label="登录账号" min-width="120" />
-        <el-table-column prop="nickname" label="用户昵称" min-width="120" />
-        <el-table-column prop="deptName" label="所属部门" min-width="120" />
-        <el-table-column label="状态" width="80">
-          <template #default="{ row }">
-            <DictTag type="common_status" :value="row.status" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" min-width="170" :formatter="dateTimeColumnFormatter" />
-        <el-table-column label="操作" width="260" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-hasPermi="'system:user:update'"
-              link
-              type="primary"
-              @click="openUpdate(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              v-hasPermi="'system:user:reset-password'"
-              link
-              type="primary"
-              @click="handleResetPassword(row)"
-            >
-              重置密码
-            </el-button>
-            <el-button
-              v-hasPermi="'system:user:update'"
-              link
-              type="primary"
-              @click="openAssignRole(row)"
-            >
-              分配角色
-            </el-button>
-            <el-button
-              v-hasPermi="'system:user:delete'"
-              link
-              type="danger"
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <N1Table :columns="columns" :data="tableData" :loading="loading">
+        <template #status="{ row }">
+          <DictTag type="common_status" :value="row.status" />
+        </template>
+        <template #action="{ row }">
+          <el-button
+            v-hasPermi="'system:user:update'"
+            link
+            type="primary"
+            @click="openUpdate(row)"
+          >
+            编辑
+          </el-button>
+          <el-button
+            v-hasPermi="'system:user:reset-password'"
+            link
+            type="primary"
+            @click="handleResetPassword(row)"
+          >
+            重置密码
+          </el-button>
+          <el-button
+            v-hasPermi="'system:user:update'"
+            link
+            type="primary"
+            @click="openAssignRole(row)"
+          >
+            分配角色
+          </el-button>
+          <el-button
+            v-hasPermi="'system:user:delete'"
+            link
+            type="danger"
+            @click="handleDelete(row)"
+          >
+            删除
+          </el-button>
+        </template>
+      </N1Table>
 
       <el-pagination
         class="pagination-bar"
@@ -130,12 +122,24 @@ import type { UserVO } from '@/api/system/user'
 import { deleteUser, getUserPage, resetUserPassword } from '@/api/system/user'
 import DictSelect from '@/components/DictSelect/index.vue'
 import DictTag from '@/components/DictTag/index.vue'
-import { dateTimeColumnFormatter } from '@/utils/format'
+import N1Table from '@/components/N1Table/index.vue'
+import type { N1TableColumn } from '@/components/N1Table/types'
+import { dateTimeFormatter } from '@/utils/format'
 import UserRoleDialog from '@/views/system/user/components/UserRoleDialog.vue'
 import UserSaveDialog from '@/views/system/user/components/UserSaveDialog.vue'
 
 // 与路由 name 对齐（keep-alive 缓存键契约）
 defineOptions({ name: 'SystemUser' })
+
+/** 列定义（field 即列宽 / 列序持久化标识，设计见 docs/前端/表格组件设计.md） */
+const columns: N1TableColumn[] = [
+  { field: 'username', title: '登录账号', minWidth: 120 },
+  { field: 'nickname', title: '用户昵称', minWidth: 120 },
+  { field: 'deptName', title: '所属部门', minWidth: 120 },
+  { field: 'status', title: '状态', width: 80, slot: 'status' },
+  { field: 'createTime', title: '创建时间', minWidth: 170, formatter: dateTimeFormatter },
+  { field: 'action', title: '操作', width: 260, fixed: 'right', slot: 'action' },
+]
 
 const loading = ref(false)
 const tableData = ref<UserVO[]>([])

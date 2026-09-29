@@ -36,45 +36,32 @@
     </el-card>
 
     <el-card class="table-card">
-      <el-table v-loading="loading" :data="tableData" stripe>
-        <el-table-column label="操作人" min-width="110">
-          <template #default="{ row }">
-            {{ row.userName ?? '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="module" label="模块" min-width="100" />
-        <el-table-column prop="name" label="操作名" min-width="120" />
-        <el-table-column label="请求" min-width="220" show-overflow-tooltip>
-          <template #default="{ row }">
-            <el-tag size="small" class="method-tag">
-              {{ row.requestMethod }}
-            </el-tag>{{ row.requestUrl }}
-          </template>
-        </el-table-column>
-        <el-table-column label="耗时" width="90">
-          <template #default="{ row }">
-            {{ row.durationMs }}ms
-          </template>
-        </el-table-column>
-        <el-table-column label="结果码" width="90">
-          <template #default="{ row }">
-            <el-tag :type="row.resultCode === 0 ? 'success' : 'danger'" size="small">
-              {{ row.resultCode }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="startTime" label="操作时间" min-width="170" :formatter="dateTimeColumnFormatter" />
-        <el-table-column label="操作" width="140" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="openDetail(row)">
-              详情
-            </el-button>
-            <el-button v-hasPermi="'system:operate-log:delete'" link type="danger" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <N1Table :columns="columns" :data="tableData" :loading="loading">
+        <template #userName="{ row }">
+          {{ row.userName ?? '-' }}
+        </template>
+        <template #request="{ row }">
+          <el-tag size="small" class="method-tag">
+            {{ row.requestMethod }}
+          </el-tag>{{ row.requestUrl }}
+        </template>
+        <template #durationMs="{ row }">
+          {{ row.durationMs }}ms
+        </template>
+        <template #resultCode="{ row }">
+          <el-tag :type="row.resultCode === 0 ? 'success' : 'danger'" size="small">
+            {{ row.resultCode }}
+          </el-tag>
+        </template>
+        <template #action="{ row }">
+          <el-button link type="primary" @click="openDetail(row)">
+            详情
+          </el-button>
+          <el-button v-hasPermi="'system:operate-log:delete'" link type="danger" @click="handleDelete(row)">
+            删除
+          </el-button>
+        </template>
+      </N1Table>
 
       <el-pagination
         class="pagination-bar"
@@ -134,10 +121,24 @@ import { computed, onMounted, reactive, ref } from 'vue'
 
 import type { OperateLogVO } from '@/api/system/operate-log'
 import { deleteOperateLog, getOperateLogPage } from '@/api/system/operate-log'
-import { dateTimeColumnFormatter, formatDateTime } from '@/utils/format'
+import N1Table from '@/components/N1Table/index.vue'
+import type { N1TableColumn } from '@/components/N1Table/types'
+import { dateTimeFormatter, formatDateTime } from '@/utils/format'
 
 // 与路由 name 对齐（keep-alive 缓存键契约）
 defineOptions({ name: 'SystemOperateLog' })
+
+/** 列定义（field 即列宽 / 列序持久化标识，设计见 docs/前端/表格组件设计.md） */
+const columns: N1TableColumn[] = [
+  { field: 'userName', title: '操作人', minWidth: 110, slot: 'userName' },
+  { field: 'module', title: '模块', minWidth: 100 },
+  { field: 'name', title: '操作名', minWidth: 120 },
+  { field: 'request', title: '请求', minWidth: 220, slot: 'request' },
+  { field: 'durationMs', title: '耗时', width: 90, slot: 'durationMs' },
+  { field: 'resultCode', title: '结果码', width: 90, slot: 'resultCode' },
+  { field: 'startTime', title: '操作时间', minWidth: 170, formatter: dateTimeFormatter },
+  { field: 'action', title: '操作', width: 140, fixed: 'right', slot: 'action' },
+]
 
 const loading = ref(false)
 const tableData = ref<OperateLogVO[]>([])
@@ -238,7 +239,7 @@ async function handleDelete(log: OperateLogVO): Promise<void> {
 }
 
 .json-pre {
-  background: var(--n1-fill-color-light);
+  background: var(--n1-fill-hover);
   border-radius: 4px;
   font-family: monospace;
   font-size: 12px;

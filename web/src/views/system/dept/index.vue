@@ -25,43 +25,31 @@
     </el-card>
 
     <el-card class="table-card">
-      <el-table
-        v-loading="loading"
+      <N1Table
+        :columns="columns"
         :data="treeData"
-        row-key="id"
-        :tree-props="{ children: 'children' }"
-        default-expand-all
-        stripe
+        :loading="loading"
+        :tree-config="{ children: 'children', expandAll: true }"
+        :row-config="{ keyField: 'id' }"
       >
-        <el-table-column prop="name" label="部门名称" min-width="220" />
-        <el-table-column prop="sort" label="排序" width="80" />
-        <el-table-column label="状态" width="80">
-          <template #default="{ row }">
-            <DictTag type="common_status" :value="row.status" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="phone" label="联系电话" min-width="130">
-          <template #default="{ row }">
-            {{ row.phone ?? '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="email" label="联系邮箱" min-width="180">
-          <template #default="{ row }">
-            {{ row.email ?? '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" min-width="170" :formatter="dateTimeColumnFormatter" />
-        <el-table-column label="操作" width="140" fixed="right">
-          <template #default="{ row }">
-            <el-button v-hasPermi="'system:dept:update'" link type="primary" @click="openUpdate(row)">
-              编辑
-            </el-button>
-            <el-button v-hasPermi="'system:dept:delete'" link type="danger" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+        <template #status="{ row }">
+          <DictTag type="common_status" :value="row.status" />
+        </template>
+        <template #phone="{ row }">
+          {{ row.phone ?? '-' }}
+        </template>
+        <template #email="{ row }">
+          {{ row.email ?? '-' }}
+        </template>
+        <template #action="{ row }">
+          <el-button v-hasPermi="'system:dept:update'" link type="primary" @click="openUpdate(row)">
+            编辑
+          </el-button>
+          <el-button v-hasPermi="'system:dept:delete'" link type="danger" @click="handleDelete(row)">
+            删除
+          </el-button>
+        </template>
+      </N1Table>
     </el-card>
 
     <DeptSaveDialog ref="saveDialogRef" @saved="loadTable" />
@@ -75,7 +63,9 @@ import { computed, onMounted, ref } from 'vue'
 import type { DeptVO } from '@/api/system/dept'
 import { deleteDept, getDeptList } from '@/api/system/dept'
 import DictTag from '@/components/DictTag/index.vue'
-import { dateTimeColumnFormatter } from '@/utils/format'
+import N1Table from '@/components/N1Table/index.vue'
+import type { N1TableColumn } from '@/components/N1Table/types'
+import { dateTimeFormatter } from '@/utils/format'
 import DeptSaveDialog from '@/views/system/dept/components/DeptSaveDialog.vue'
 
 // 与路由 name 对齐（keep-alive 缓存键契约）
@@ -85,6 +75,17 @@ defineOptions({ name: 'SystemDept' })
 interface DeptRow extends DeptVO {
   children: DeptRow[]
 }
+
+/** 列定义（field 即列宽 / 列序持久化标识，设计见 docs/前端/表格组件设计.md） */
+const columns: N1TableColumn[] = [
+  { field: 'name', title: '部门名称', minWidth: 220 },
+  { field: 'sort', title: '排序', width: 80 },
+  { field: 'status', title: '状态', width: 80, slot: 'status' },
+  { field: 'phone', title: '联系电话', minWidth: 130, slot: 'phone' },
+  { field: 'email', title: '联系邮箱', minWidth: 180, slot: 'email' },
+  { field: 'createTime', title: '创建时间', minWidth: 170, formatter: dateTimeFormatter },
+  { field: 'action', title: '操作', width: 140, fixed: 'right', slot: 'action' },
+]
 
 const loading = ref(false)
 const allDepts = ref<DeptVO[]>([])

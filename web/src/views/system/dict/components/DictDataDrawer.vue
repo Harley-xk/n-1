@@ -31,39 +31,28 @@
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" :data="tableData" stripe>
-        <el-table-column prop="sort" label="排序" width="70" />
-        <el-table-column prop="label" label="数据标签" min-width="120" />
-        <el-table-column prop="dictValue" label="数据键值" min-width="120" />
-        <el-table-column label="状态" width="80">
-          <template #default="{ row }">
-            <DictTag type="common_status" :value="row.status" />
-          </template>
-        </el-table-column>
-        <el-table-column label="标签配色" width="110">
-          <template #default="{ row }">
-            <el-tag v-if="row.colorType" :type="row.colorType" size="small">
-              {{ row.colorType }}
-            </el-tag>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="120" show-overflow-tooltip>
-          <template #default="{ row }">
-            {{ row.remark ?? '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="140" fixed="right">
-          <template #default="{ row }">
-            <el-button v-hasPermi="'system:dict:update'" link type="primary" @click="openUpdate(row)">
-              编辑
-            </el-button>
-            <el-button v-hasPermi="'system:dict:delete'" link type="danger" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <N1Table :columns="columns" :data="tableData" :loading="loading" persist-key="SystemDict:data">
+        <template #status="{ row }">
+          <DictTag type="common_status" :value="row.status" />
+        </template>
+        <template #colorType="{ row }">
+          <el-tag v-if="row.colorType" :type="row.colorType" size="small">
+            {{ row.colorType }}
+          </el-tag>
+          <span v-else>-</span>
+        </template>
+        <template #remark="{ row }">
+          {{ row.remark ?? '-' }}
+        </template>
+        <template #action="{ row }">
+          <el-button v-hasPermi="'system:dict:update'" link type="primary" @click="openUpdate(row)">
+            编辑
+          </el-button>
+          <el-button v-hasPermi="'system:dict:delete'" link type="danger" @click="handleDelete(row)">
+            删除
+          </el-button>
+        </template>
+      </N1Table>
 
       <el-pagination
         class="pagination-bar"
@@ -88,7 +77,20 @@ import { computed, reactive, ref } from 'vue'
 import type { DictDataVO, DictTypeVO } from '@/api/system/dict'
 import { deleteDictData, getDictDataPage } from '@/api/system/dict'
 import DictTag from '@/components/DictTag/index.vue'
+import N1Table from '@/components/N1Table/index.vue'
+import type { N1TableColumn } from '@/components/N1Table/types'
 import DictDataSaveDialog from '@/views/system/dict/components/DictDataSaveDialog.vue'
+
+/** 列定义（抽屉内非页面级表格，持久化 key 显式指定，设计见 docs/前端/表格组件设计.md §4.2） */
+const columns: N1TableColumn[] = [
+  { field: 'sort', title: '排序', width: 70 },
+  { field: 'label', title: '数据标签', minWidth: 120 },
+  { field: 'dictValue', title: '数据键值', minWidth: 120 },
+  { field: 'status', title: '状态', width: 80, slot: 'status' },
+  { field: 'colorType', title: '标签配色', width: 110, slot: 'colorType' },
+  { field: 'remark', title: '备注', minWidth: 120, slot: 'remark' },
+  { field: 'action', title: '操作', width: 140, fixed: 'right', slot: 'action' },
+]
 
 const visible = ref(false)
 const loading = ref(false)

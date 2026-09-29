@@ -40,44 +40,32 @@
     </el-card>
 
     <el-card class="table-card">
-      <el-table v-loading="loading" :data="tableData" stripe>
-        <el-table-column label="类型" width="80">
-          <template #default="{ row }">
-            <el-tag :type="row.logType === 10 ? 'primary' : 'info'" size="small">
-              {{ row.logType === 10 ? '登录' : '登出' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="username" label="登录账号" min-width="120" />
-        <el-table-column label="来源 IP" min-width="130">
-          <template #default="{ row }">
-            {{ row.ip ?? '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="结果" width="90">
-          <template #default="{ row }">
-            <el-tag :type="row.resultCode === 0 ? 'success' : 'danger'" size="small">
-              {{ row.resultCode }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="结果信息" min-width="180" show-overflow-tooltip>
-          <template #default="{ row }">
-            {{ row.resultMsg ?? '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="loginTime" label="登录 / 登出时间" min-width="170" :formatter="dateTimeColumnFormatter" />
-        <el-table-column label="操作" width="140" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="openDetail(row)">
-              详情
-            </el-button>
-            <el-button v-hasPermi="'system:login-log:delete'" link type="danger" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <N1Table :columns="columns" :data="tableData" :loading="loading">
+        <template #logType="{ row }">
+          <el-tag :type="row.logType === 10 ? 'primary' : 'info'" size="small">
+            {{ row.logType === 10 ? '登录' : '登出' }}
+          </el-tag>
+        </template>
+        <template #ip="{ row }">
+          {{ row.ip ?? '-' }}
+        </template>
+        <template #resultCode="{ row }">
+          <el-tag :type="row.resultCode === 0 ? 'success' : 'danger'" size="small">
+            {{ row.resultCode }}
+          </el-tag>
+        </template>
+        <template #resultMsg="{ row }">
+          {{ row.resultMsg ?? '-' }}
+        </template>
+        <template #action="{ row }">
+          <el-button link type="primary" @click="openDetail(row)">
+            详情
+          </el-button>
+          <el-button v-hasPermi="'system:login-log:delete'" link type="danger" @click="handleDelete(row)">
+            删除
+          </el-button>
+        </template>
+      </N1Table>
 
       <el-pagination
         class="pagination-bar"
@@ -128,10 +116,23 @@ import { onMounted, reactive, ref } from 'vue'
 
 import type { LoginLogVO } from '@/api/system/login-log'
 import { deleteLoginLog, getLoginLogPage } from '@/api/system/login-log'
-import { dateTimeColumnFormatter, formatDateTime } from '@/utils/format'
+import N1Table from '@/components/N1Table/index.vue'
+import type { N1TableColumn } from '@/components/N1Table/types'
+import { dateTimeFormatter, formatDateTime } from '@/utils/format'
 
 // 与路由 name 对齐（keep-alive 缓存键契约）
 defineOptions({ name: 'SystemLoginLog' })
+
+/** 列定义（field 即列宽 / 列序持久化标识，设计见 docs/前端/表格组件设计.md） */
+const columns: N1TableColumn[] = [
+  { field: 'logType', title: '类型', width: 80, slot: 'logType' },
+  { field: 'username', title: '登录账号', minWidth: 120 },
+  { field: 'ip', title: '来源 IP', minWidth: 130, slot: 'ip' },
+  { field: 'resultCode', title: '结果', width: 90, slot: 'resultCode' },
+  { field: 'resultMsg', title: '结果信息', minWidth: 180, slot: 'resultMsg' },
+  { field: 'loginTime', title: '登录 / 登出时间', minWidth: 170, formatter: dateTimeFormatter },
+  { field: 'action', title: '操作', width: 140, fixed: 'right', slot: 'action' },
+]
 
 const loading = ref(false)
 const tableData = ref<LoginLogVO[]>([])

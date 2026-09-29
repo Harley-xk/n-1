@@ -41,35 +41,24 @@
     </el-card>
 
     <el-card class="table-card">
-      <el-table v-loading="loading" :data="tableData" stripe>
-        <el-table-column prop="category" label="参数分类" min-width="100" />
-        <el-table-column prop="name" label="参数名称" min-width="150" />
-        <el-table-column prop="configKey" label="参数键名" min-width="200" />
-        <el-table-column label="参数键值" min-width="160" show-overflow-tooltip>
-          <template #default="{ row }">
-            {{ row.visible ? row.configValue : '******' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="展示" width="80">
-          <template #default="{ row }">
-            <el-tag :type="row.visible ? 'primary' : 'info'" size="small">
-              {{ row.visible ? '明文' : '隐藏' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="创建时间" min-width="170" :formatter="dateTimeColumnFormatter" />
-        <el-table-column label="操作" width="140" fixed="right">
-          <template #default="{ row }">
-            <el-button v-hasPermi="'system:config:update'" link type="primary" @click="openUpdate(row)">
-              编辑
-            </el-button>
-            <el-button v-hasPermi="'system:config:delete'" link type="danger" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <N1Table :columns="columns" :data="tableData" :loading="loading">
+        <template #configValue="{ row }">
+          {{ row.visible ? row.configValue : '******' }}
+        </template>
+        <template #visible="{ row }">
+          <el-tag :type="row.visible ? 'primary' : 'info'" size="small">
+            {{ row.visible ? '明文' : '隐藏' }}
+          </el-tag>
+        </template>
+        <template #action="{ row }">
+          <el-button v-hasPermi="'system:config:update'" link type="primary" @click="openUpdate(row)">
+            编辑
+          </el-button>
+          <el-button v-hasPermi="'system:config:delete'" link type="danger" @click="handleDelete(row)">
+            删除
+          </el-button>
+        </template>
+      </N1Table>
 
       <el-pagination
         class="pagination-bar"
@@ -93,11 +82,25 @@ import { onMounted, reactive, ref } from 'vue'
 
 import type { ConfigVO } from '@/api/system/config'
 import { deleteConfig, getConfigPage } from '@/api/system/config'
-import { dateTimeColumnFormatter } from '@/utils/format'
+import N1Table from '@/components/N1Table/index.vue'
+import type { N1TableColumn } from '@/components/N1Table/types'
+import { dateTimeFormatter } from '@/utils/format'
 import ConfigSaveDialog from '@/views/system/config/components/ConfigSaveDialog.vue'
 
 // 与路由 name 对齐（keep-alive 缓存键契约）
 defineOptions({ name: 'SystemConfig' })
+
+/** 列定义（field 即列宽 / 列序持久化标识，设计见 docs/前端/表格组件设计.md） */
+const columns: N1TableColumn[] = [
+  { field: 'category', title: '参数分类', minWidth: 100 },
+  { field: 'name', title: '参数名称', minWidth: 150 },
+  { field: 'configKey', title: '参数键名', minWidth: 200 },
+  { field: 'configValue', title: '参数键值', minWidth: 160, slot: 'configValue' },
+  { field: 'visible', title: '展示', width: 80, slot: 'visible' },
+  { field: 'remark', title: '备注', minWidth: 140 },
+  { field: 'createTime', title: '创建时间', minWidth: 170, formatter: dateTimeFormatter },
+  { field: 'action', title: '操作', width: 140, fixed: 'right', slot: 'action' },
+]
 
 const loading = ref(false)
 const tableData = ref<ConfigVO[]>([])

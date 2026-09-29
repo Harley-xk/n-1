@@ -50,38 +50,22 @@
     </el-card>
 
     <el-card class="table-card">
-      <el-table v-loading="loading" :data="tableData" stripe>
-        <el-table-column prop="name" label="商品名称" min-width="160" />
-        <el-table-column label="分类" width="100">
-          <template #default="{ row }">
-            <DictTag type="demo_product_category" :value="row.category" />
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="price"
-          label="金额（元）"
-          width="120"
-          align="right"
-          :formatter="priceFormatter"
-        />
-        <el-table-column label="状态" width="80">
-          <template #default="{ row }">
-            <DictTag type="common_status" :value="row.status" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="创建时间" min-width="170" :formatter="dateTimeColumnFormatter" />
-        <el-table-column label="操作" width="140" fixed="right">
-          <template #default="{ row }">
-            <el-button v-hasPermi="'demo:product:update'" link type="primary" @click="openUpdate(row)">
-              编辑
-            </el-button>
-            <el-button v-hasPermi="'demo:product:delete'" link type="danger" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <N1Table :columns="columns" :data="tableData" :loading="loading">
+        <template #category="{ row }">
+          <DictTag type="demo_product_category" :value="row.category" />
+        </template>
+        <template #status="{ row }">
+          <DictTag type="common_status" :value="row.status" />
+        </template>
+        <template #action="{ row }">
+          <el-button v-hasPermi="'demo:product:update'" link type="primary" @click="openUpdate(row)">
+            编辑
+          </el-button>
+          <el-button v-hasPermi="'demo:product:delete'" link type="danger" @click="handleDelete(row)">
+            删除
+          </el-button>
+        </template>
+      </N1Table>
 
       <el-pagination
         class="pagination-bar"
@@ -107,12 +91,25 @@ import type { ProductVO } from '@/api/demo/product'
 import { deleteProduct, getProductPage } from '@/api/demo/product'
 import DictSelect from '@/components/DictSelect/index.vue'
 import DictTag from '@/components/DictTag/index.vue'
+import N1Table from '@/components/N1Table/index.vue'
+import type { N1TableColumn } from '@/components/N1Table/types'
 import { useDictStore } from '@/stores/dict'
-import { dateTimeColumnFormatter } from '@/utils/format'
+import { dateTimeFormatter } from '@/utils/format'
 import ProductSaveDialog from '@/views/demo/product/components/ProductSaveDialog.vue'
 
 // 与路由 name 对齐（keep-alive 缓存键契约）
 defineOptions({ name: 'DemoProduct' })
+
+/** 列定义（field 即列宽 / 列序持久化标识，设计见 docs/前端/表格组件设计.md） */
+const columns: N1TableColumn[] = [
+  { field: 'name', title: '商品名称', minWidth: 160 },
+  { field: 'category', title: '分类', width: 100, slot: 'category' },
+  { field: 'price', title: '金额（元）', width: 120, align: 'right', formatter: priceFormatter },
+  { field: 'status', title: '状态', width: 80, slot: 'status' },
+  { field: 'description', title: '描述', minWidth: 200 },
+  { field: 'createTime', title: '创建时间', minWidth: 170, formatter: dateTimeFormatter },
+  { field: 'action', title: '操作', width: 140, fixed: 'right', slot: 'action' },
+]
 
 const loading = ref(false)
 const tableData = ref<ProductVO[]>([])
@@ -207,8 +204,8 @@ async function handleDelete(product: ProductVO): Promise<void> {
   loadTable()
 }
 
-/** 金额列格式化：固定两位小数 */
-function priceFormatter(_row: unknown, _column: unknown, cellValue: number): string {
+/** 金额列格式化：固定两位小数（vxe formatter 签名） */
+function priceFormatter({ cellValue }: { cellValue: number | null | undefined }): string {
   return cellValue == null ? '-' : cellValue.toFixed(2)
 }
 </script>

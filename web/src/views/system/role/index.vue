@@ -42,49 +42,40 @@
     </el-card>
 
     <el-card class="table-card">
-      <el-table v-loading="loading" :data="tableData" stripe>
-        <el-table-column prop="name" label="角色名称" min-width="140" />
-        <el-table-column prop="code" label="角色标识" min-width="140" />
-        <el-table-column prop="sort" label="排序" width="80" />
-        <el-table-column label="状态" width="80">
-          <template #default="{ row }">
-            <DictTag type="common_status" :value="row.status" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="创建时间" min-width="170" :formatter="dateTimeColumnFormatter" />
-        <el-table-column label="操作" width="220" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-hasPermi="'system:role:update'"
-              link
-              type="primary"
-              :disabled="row.code === 'super_admin'"
-              @click="openUpdate(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              v-hasPermi="'system:role:assign-permission'"
-              link
-              type="primary"
-              :disabled="row.code === 'super_admin'"
-              @click="openAssignPermission(row)"
-            >
-              分配权限
-            </el-button>
-            <el-button
-              v-hasPermi="'system:role:delete'"
-              link
-              type="danger"
-              :disabled="row.code === 'super_admin'"
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <N1Table :columns="columns" :data="tableData" :loading="loading">
+        <template #status="{ row }">
+          <DictTag type="common_status" :value="row.status" />
+        </template>
+        <template #action="{ row }">
+          <el-button
+            v-hasPermi="'system:role:update'"
+            link
+            type="primary"
+            :disabled="row.code === 'super_admin'"
+            @click="openUpdate(row)"
+          >
+            编辑
+          </el-button>
+          <el-button
+            v-hasPermi="'system:role:assign-permission'"
+            link
+            type="primary"
+            :disabled="row.code === 'super_admin'"
+            @click="openAssignPermission(row)"
+          >
+            分配权限
+          </el-button>
+          <el-button
+            v-hasPermi="'system:role:delete'"
+            link
+            type="danger"
+            :disabled="row.code === 'super_admin'"
+            @click="handleDelete(row)"
+          >
+            删除
+          </el-button>
+        </template>
+      </N1Table>
 
       <el-pagination
         class="pagination-bar"
@@ -111,12 +102,25 @@ import type { RoleVO } from '@/api/system/role'
 import { deleteRole, getRolePage } from '@/api/system/role'
 import DictSelect from '@/components/DictSelect/index.vue'
 import DictTag from '@/components/DictTag/index.vue'
-import { dateTimeColumnFormatter } from '@/utils/format'
+import N1Table from '@/components/N1Table/index.vue'
+import type { N1TableColumn } from '@/components/N1Table/types'
+import { dateTimeFormatter } from '@/utils/format'
 import RolePermissionDialog from '@/views/system/role/components/RolePermissionDialog.vue'
 import RoleSaveDialog from '@/views/system/role/components/RoleSaveDialog.vue'
 
 // 与路由 name 对齐（keep-alive 缓存键契约）
 defineOptions({ name: 'SystemRole' })
+
+/** 列定义（field 即列宽 / 列序持久化标识，设计见 docs/前端/表格组件设计.md） */
+const columns: N1TableColumn[] = [
+  { field: 'name', title: '角色名称', minWidth: 140 },
+  { field: 'code', title: '角色标识', minWidth: 140 },
+  { field: 'sort', title: '排序', width: 80 },
+  { field: 'status', title: '状态', width: 80, slot: 'status' },
+  { field: 'remark', title: '备注', minWidth: 140 },
+  { field: 'createTime', title: '创建时间', minWidth: 170, formatter: dateTimeFormatter },
+  { field: 'action', title: '操作', width: 220, fixed: 'right', slot: 'action' },
+]
 
 const loading = ref(false)
 const tableData = ref<RoleVO[]>([])
