@@ -2,7 +2,7 @@
  * 作者: Harley-xk
  * 创建: 2026-09-28
  *
- * 描述: 操作日志拦截器：环绕 @OperateLog 标注的接口，请求线程内取完上下文后异步入库（B3，n-2 AOP 切面的 NestJS 翻译）
+ * 描述: 操作日志拦截器：环绕 @OperateLog 标注的接口，请求线程内取完上下文后异步入库
  */
 import { type CallHandler, type ExecutionContext, HttpException, Injectable, Logger, type NestInterceptor } from '@nestjs/common'
 // Reflector 必须值导入：构造注入的参数类型在运行时须保留 design:paramtypes 元数据（import type 会退化为 Function 导致 DI 解析失败）
@@ -27,8 +27,7 @@ const RESULT_MSG_MAX_LENGTH = 500
 
 /**
  * 操作日志拦截器：全局注册（APP_INTERCEPTOR），排在 TransformInterceptor **之后**
- * ——APP_INTERCEPTOR 数组顺序即洋葱外内序，后注册者为内层、更贴近 handler，
- * 等价 n-2 AOP 切面环绕 controller 方法的切点位置。
+ * ——APP_INTERCEPTOR 数组顺序即洋葱外内序，后注册者为内层、更贴近 handler。
  *
  * - 无 @OperateLog 注解的请求**先于任何依赖触达短路放行**（存量接口零开销）
  * - 结果码取值不读 request.apiCode（该回填位只服务访问日志中间件）：
@@ -119,7 +118,7 @@ export class OperateLogInterceptor implements NestInterceptor {
 
   /**
    * 序列化请求参数：body + query + params 三合一（n-1 Controller 全部经三者取参）。
-   * 序列化时 password 键掩敏（n-2 未掩敏，属安全改进）；JSON 失败（如循环引用）降级 util.inspect。
+   * 序列化时 password 键掩敏（安全考量）；JSON 失败（如循环引用）降级 util.inspect。
    */
   private formatParams(request: Request): string | null {
     // express 的 body/query/params 是 any：收敛到 unknown 后再序列化（避开 unsafe-any 检查）

@@ -2,7 +2,7 @@
  * 作者: Harley-xk
  * 创建: 2026-09-28
  *
- * 描述: 蛇形命名策略——表 / 列 / 关联名统一蛇形小写不加引号（n-2 标识符规约的 TypeORM 翻译）
+ * 描述: 蛇形命名策略——表 / 列 / 关联名统一蛇形小写不加引号
  */
 import { DefaultNamingStrategy, type NamingStrategyInterface } from 'typeorm'
 

@@ -23,7 +23,7 @@ import { SystemErrorCode } from '../error-codes'
 import { ADMIN_USER_ID, CONFIG_KEY_USER_INIT_PASSWORD } from '../system.constants'
 import type { UserAssignRoleDto, UserCreateDto, UserPageDto, UserUpdateDto, UserVo } from './dto/user.dto'
 
-/** BCrypt cost：与 n-2 种子散列同档（$2a$10$），兼顾安全与登录耗时 */
+/** BCrypt cost：$2a$10$，兼顾安全与登录耗时 */
 const BCRYPT_COST = 10
 
 @Injectable()

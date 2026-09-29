@@ -166,7 +166,7 @@ watch(
   display: none;
 }
 
-/* 页签：圆角浅底块（激活主色浅底 + 主色文字，区别于 n-2 的白底上圆角接入形态） */
+/* 页签：圆角浅底块（激活主色浅底 + 主色文字） */
 .n1-tag {
   height: 28px;
   display: inline-flex;

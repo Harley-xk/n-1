@@ -108,7 +108,7 @@ export function validatePermissionPoints(
   return merged
 }
 
-/** 业务模块的权限点接入定义（n-2 PermissionProvider 的 NestJS 翻译：注册表实例注册 + 模块生命周期钩子） */
+/** 业务模块的权限点接入定义（注册表实例注册 + 模块生命周期钩子接入） */
 export interface PermissionModuleDefinition {
   /** 模块注册名，须与权限串首段一致（如 'demo'） */
   readonly module: string

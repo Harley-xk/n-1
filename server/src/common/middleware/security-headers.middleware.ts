@@ -11,7 +11,7 @@ import type { NextFunction, Request, Response } from 'express'
 /**
  * 安全响应头中间件：基础防御头的统一出口。
  *
- * 刻意不加的头（沿用 n-2 已论证的取舍）：
+ * 刻意不加的头（部署层策略，由网关按环境注入）：
  * - `X-XSS-Protection`：浏览器已废弃该机制
  * - CSP 与 HSTS：HSTS 仅 HTTPS 有意义，与 CSP 同属部署层策略，由 nginx / 前端服务按环境注入
  */

@@ -21,8 +21,7 @@ export interface ResponseCodeCarrier {
 
 /**
  * 在 request 上回填业务响应码。
- * HTTP 响应流式写出后无法再取响应体，request 属性回填是访问日志拿到业务 code 的唯一通路
- * （n-2 request attribute 机制的 NestJS 翻译）。
+ * HTTP 响应流式写出后无法再取响应体，request 属性回填是访问日志拿到业务 code 的唯一通路。
  */
 export function setResponseCode(request: ResponseCodeCarrier, code: number): void {
   request.apiCode = code

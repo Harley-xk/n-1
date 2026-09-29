@@ -57,7 +57,7 @@ const menus = computed(() => buildMenuTree(layoutChildren, '/', permission => au
 </script>
 
 <style scoped>
-/* 侧栏白卡片：独立定界（与 n-2 的透明悬浮形态区分） */
+/* 侧栏白卡片：独立定界 */
 .n1-sidebar {
   width: var(--n1-sidebar-width);
   flex-shrink: 0;

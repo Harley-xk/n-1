@@ -2,7 +2,7 @@
  * 作者: Harley-xk
  * 创建: 2026-09-28
  *
- * 描述: 异步任务队列：FIFO + 未完成任务数上限的微任务调度器（B8，n-2 CallerRuns 线程池反压语义的 Node 单线程翻译）
+ * 描述: 异步任务队列：FIFO + 未完成任务数上限的微任务调度器（CallerRuns 反压语义的单线程实现）
  */
 import { Injectable, Logger, type OnApplicationShutdown } from '@nestjs/common'
 
@@ -15,7 +15,7 @@ const DRAIN_TIMEOUT_MS = 5000
  * 异步任务队列：日志异步入库等「失败仅告警、不阻塞主流程」场景的统一消费通道。
  *
  * - Node 单线程无线程池概念，「池」翻译为未完成任务数上限（MAX_CONCURRENCY）；
- *   队列满时不拒绝，而是**不排队当场异步执行**——等价 n-2 CallerRunsPolicy
+ *   队列满时不拒绝，而是**不排队当场异步执行**——线程池 CallerRuns 反压策略
  *   「队列满退回调用线程执行、天然限流」的语义（用当前请求的响应时间吸收背压，不阻塞事件循环）
  * - 任务闭包必须持有**纯数据**（如组装完的日志实体），不得在任务体内读取 AsyncLocalStorage
  *   请求上下文——队列执行时已脱离请求异步上下文（设计纪律，见批次五设计文档 §3.3）

@@ -85,7 +85,7 @@ import { SystemModule } from './modules/system/system.module'
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     // 全局响应包装拦截器：统一包装为 { code, message, data } 并转换时间字段，同上注册
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
-    // 全局操作日志拦截器：排在 TransformInterceptor 之后（洋葱内层、贴近 handler，等价 n-2 AOP 切点位置）；
+    // 全局操作日志拦截器：排在 TransformInterceptor 之后（洋葱内层、贴近 handler，可捕获业务结果）；
     // @OperateLog 标注的接口在响应后异步入库，无注解请求先于依赖触达短路放行
     { provide: APP_INTERCEPTOR, useClass: OperateLogInterceptor },
     // 全局签名守卫：写方法请求签名校验（开关/豁免/自定义方案见 docs/指南/请求签名验证设计.md），同上注册
