@@ -16,7 +16,7 @@ export interface ConfigVO {
   configValue: string
   visible: boolean
   remark: string | null
-  createTime: string
+  createTime: number
 }
 
 /** 参数创建请求（configKey 全局唯一） */

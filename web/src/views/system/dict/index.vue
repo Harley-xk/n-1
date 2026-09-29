@@ -63,7 +63,7 @@
             {{ row.remark ?? '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" min-width="170" />
+        <el-table-column prop="createTime" label="创建时间" min-width="170" :formatter="dateTimeColumnFormatter" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button v-hasPermi="'system:dict:update'" link type="primary" @click="openUpdate(row)">
@@ -104,6 +104,7 @@ import type { DictTypeVO } from '@/api/system/dict'
 import { deleteDictType, getDictTypePage } from '@/api/system/dict'
 import DictSelect from '@/components/DictSelect/index.vue'
 import DictTag from '@/components/DictTag/index.vue'
+import { dateTimeColumnFormatter } from '@/utils/format'
 import DictDataDrawer from '@/views/system/dict/components/DictDataDrawer.vue'
 import DictTypeSaveDialog from '@/views/system/dict/components/DictTypeSaveDialog.vue'
 

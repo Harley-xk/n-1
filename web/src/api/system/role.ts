@@ -15,7 +15,7 @@ export interface RoleVO {
   sort: number
   status: boolean
   remark: string | null
-  createTime: string
+  createTime: number
 }
 
 /** 角色创建请求（code 创建后不可改；super_admin 为保留字） */

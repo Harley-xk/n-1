@@ -14,7 +14,7 @@ export interface DictTypeVO {
   type: string
   status: boolean
   remark: string | null
-  createTime: string
+  createTime: number
 }
 
 /** 字典数据信息（后端 DictDataVo；dictValue 统一字符串形态） */
@@ -27,7 +27,7 @@ export interface DictDataVO {
   status: boolean
   colorType: string | null
   remark: string | null
-  createTime: string
+  createTime: number
 }
 
 /** 字典数据精简项（折叠出口；colorType 为 el-tag 语义色） */

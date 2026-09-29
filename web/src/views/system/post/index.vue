@@ -59,7 +59,7 @@
             <DictTag type="common_status" :value="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" min-width="170" />
+        <el-table-column prop="createTime" label="创建时间" min-width="170" :formatter="dateTimeColumnFormatter" />
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button v-hasPermi="'system:post:update'" link type="primary" @click="openUpdate(row)">
@@ -96,6 +96,7 @@ import type { PostVO } from '@/api/system/post'
 import { deletePost, getPostPage } from '@/api/system/post'
 import DictSelect from '@/components/DictSelect/index.vue'
 import DictTag from '@/components/DictTag/index.vue'
+import { dateTimeColumnFormatter } from '@/utils/format'
 import PostSaveDialog from '@/views/system/post/components/PostSaveDialog.vue'
 
 // 与路由 name 对齐（keep-alive 缓存键契约）

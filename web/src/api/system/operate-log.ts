@@ -19,11 +19,11 @@ export interface OperateLogVO {
   requestParams: string | null
   ip: string | null
   userAgent: string | null
-  startTime: string
+  startTime: number
   durationMs: number
   resultCode: number
   resultMsg: string | null
-  createTime: string
+  createTime: number
 }
 
 /** 操作日志分页查询条件（操作人 / 模块名模糊） */

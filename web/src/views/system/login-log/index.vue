@@ -66,7 +66,7 @@
             {{ row.resultMsg ?? '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="loginTime" label="登录 / 登出时间" min-width="170" />
+        <el-table-column prop="loginTime" label="登录 / 登出时间" min-width="170" :formatter="dateTimeColumnFormatter" />
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row)">
@@ -112,7 +112,7 @@
           {{ detail.resultMsg ?? '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="时间" :span="2">
-          {{ detail.loginTime }}
+          {{ formatDateTime(detail.loginTime) }}
         </el-descriptions-item>
         <el-descriptions-item label="User-Agent" :span="2">
           {{ detail.userAgent ?? '-' }}
@@ -128,6 +128,7 @@ import { onMounted, reactive, ref } from 'vue'
 
 import type { LoginLogVO } from '@/api/system/login-log'
 import { deleteLoginLog, getLoginLogPage } from '@/api/system/login-log'
+import { dateTimeColumnFormatter, formatDateTime } from '@/utils/format'
 
 // 与路由 name 对齐（keep-alive 缓存键契约）
 defineOptions({ name: 'SystemLoginLog' })

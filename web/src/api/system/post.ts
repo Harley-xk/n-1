@@ -14,7 +14,7 @@ export interface PostVO {
   name: string
   sort: number
   status: boolean
-  createTime: string
+  createTime: number
 }
 
 /** 岗位创建请求 */

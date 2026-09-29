@@ -15,7 +15,7 @@ export interface DeptVO {
   phone: string | null
   email: string | null
   status: boolean
-  createTime: string
+  createTime: number
 }
 
 /** 部门创建请求（parentId 缺省为根部门） */

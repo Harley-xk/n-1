@@ -58,7 +58,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="创建时间" min-width="170" />
+        <el-table-column prop="createTime" label="创建时间" min-width="170" :formatter="dateTimeColumnFormatter" />
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button v-hasPermi="'system:config:update'" link type="primary" @click="openUpdate(row)">
@@ -93,6 +93,7 @@ import { onMounted, reactive, ref } from 'vue'
 
 import type { ConfigVO } from '@/api/system/config'
 import { deleteConfig, getConfigPage } from '@/api/system/config'
+import { dateTimeColumnFormatter } from '@/utils/format'
 import ConfigSaveDialog from '@/views/system/config/components/ConfigSaveDialog.vue'
 
 // 与路由 name 对齐（keep-alive 缓存键契约）

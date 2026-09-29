@@ -64,7 +64,7 @@
             <DictTag type="common_status" :value="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" min-width="170" />
+        <el-table-column prop="createTime" label="创建时间" min-width="170" :formatter="dateTimeColumnFormatter" />
         <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
             <el-button
@@ -130,6 +130,7 @@ import type { UserVO } from '@/api/system/user'
 import { deleteUser, getUserPage, resetUserPassword } from '@/api/system/user'
 import DictSelect from '@/components/DictSelect/index.vue'
 import DictTag from '@/components/DictTag/index.vue'
+import { dateTimeColumnFormatter } from '@/utils/format'
 import UserRoleDialog from '@/views/system/user/components/UserRoleDialog.vue'
 import UserSaveDialog from '@/views/system/user/components/UserSaveDialog.vue'
 

@@ -17,8 +17,8 @@ export interface LoginLogVO {
   userAgent: string | null
   resultCode: number
   resultMsg: string | null
-  loginTime: string
-  createTime: string
+  loginTime: number
+  createTime: number
 }
 
 /** 登录日志分页查询条件（用户名模糊、类型精确） */

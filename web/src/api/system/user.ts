@@ -7,7 +7,7 @@
 import type { PageParam, PageResult } from '@/api/http'
 import { http } from '@/api/http'
 
-/** 用户信息（后端 UserVo；状态为 boolean，时间为 ISO 字符串） */
+/** 用户信息（后端 UserVo；状态为 boolean，时间为毫秒时间戳） */
 export interface UserVO {
   id: string
   username: string
@@ -16,7 +16,7 @@ export interface UserVO {
   deptId: string | null
   deptName: string | null
   postIds: string[]
-  createTime: string
+  createTime: number
 }
 
 /** 用户创建请求（后端 UserCreateDto；口令缺省走服务端三级兜底链） */

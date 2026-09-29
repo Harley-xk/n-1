@@ -63,7 +63,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="startTime" label="操作时间" min-width="170" />
+        <el-table-column prop="startTime" label="操作时间" min-width="170" :formatter="dateTimeColumnFormatter" />
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row)">
@@ -112,7 +112,7 @@
           {{ detail.requestUrl }}
         </el-descriptions-item>
         <el-descriptions-item label="操作时间">
-          {{ detail.startTime }}
+          {{ formatDateTime(detail.startTime) }}
         </el-descriptions-item>
         <el-descriptions-item label="来源 IP">
           {{ detail.ip ?? '-' }}
@@ -134,6 +134,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 
 import type { OperateLogVO } from '@/api/system/operate-log'
 import { deleteOperateLog, getOperateLogPage } from '@/api/system/operate-log'
+import { dateTimeColumnFormatter, formatDateTime } from '@/utils/format'
 
 // 与路由 name 对齐（keep-alive 缓存键契约）
 defineOptions({ name: 'SystemOperateLog' })
