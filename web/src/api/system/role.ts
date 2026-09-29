@@ -71,7 +71,7 @@ export async function getRolePermissions(id: string): Promise<string[]> {
   return data!
 }
 
-/** 分配权限（permissions 为目标全集，后端差集增量绑定并逐串校验注册表） */
+/** 分配权限（permissions 为目标全集，后端差集增量绑定并逐串校验注册表；body 须带 id） */
 export async function assignRolePermissions(id: string, permissions: string[]): Promise<void> {
-  await http.put<null>(`/system/role/${id}/permissions`, { permissions })
+  await http.put<null>(`/system/role/${id}/permissions`, { id, permissions })
 }

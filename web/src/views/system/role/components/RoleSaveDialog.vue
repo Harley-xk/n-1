@@ -77,7 +77,7 @@ const rules: FormRules = {
   name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
   code: [
     { required: true, message: '请输入角色标识', trigger: 'blur' },
-    { pattern: /^[a-z][a-z0-9_-]*$/, message: '小写字母开头，可含数字 / 连字符 / 下划线', trigger: 'blur' },
+    { pattern: /^[a-z][a-z0-9-]*$/, message: '小写字母开头，可含数字 / 连字符', trigger: 'blur' },
   ],
 }
 
