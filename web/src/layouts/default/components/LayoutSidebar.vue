@@ -86,7 +86,8 @@ const menus = computed(() => buildMenuTree(layoutChildren, '/', permission => au
   padding: 8px 4px;
 }
 
-/* 收起态下菜单项水平居中（仅剩图标，去掉层级缩进 padding） */
+/* 收起态下菜单项水平居中（仅剩图标，去掉层级缩进 padding）。
+   一级叶子项的图标外层是 EP 的 tooltip trigger 包裹层（占满整项），须连同内层一起居中 */
 .n1-sidebar.collapsed :deep(.el-menu) {
   width: 100%;
 }
@@ -94,6 +95,10 @@ const menus = computed(() => buildMenuTree(layoutChildren, '/', permission => au
 .n1-sidebar.collapsed :deep(.el-menu--collapse .el-menu-item),
 .n1-sidebar.collapsed :deep(.el-menu--collapse .el-sub-menu__title) {
   padding: 0;
+  justify-content: center;
+}
+
+.n1-sidebar.collapsed :deep(.el-menu--collapse .el-menu-item .el-menu-tooltip__trigger) {
   justify-content: center;
 }
 

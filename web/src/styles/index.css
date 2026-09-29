@@ -26,9 +26,9 @@ body {
   background: var(--n1-canvas) fixed;
 }
 
-/* 页面通用容器：内容卡片内边距 */
+/* 页面通用容器：内容卡片内沿留白（区块卡另有自身内边距，两者合计控制内容缩进） */
 .page-container {
-  padding: 16px;
+  padding: 12px;
 }
 
 /* 查询区与表格区的纵向间距 */
@@ -45,6 +45,11 @@ body {
   box-shadow: none;
   background: transparent;
   border-radius: 0;
+}
+
+/* 区块卡内边距收敛（EP 默认 20px 与页面容器 padding 叠加后缩进过大） */
+.n1-content-card .el-card .el-card__body {
+  padding: 12px;
 }
 
 .n1-content-card .el-card + .el-card {
