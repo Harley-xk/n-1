@@ -29,14 +29,14 @@ test.describe('登录链路', () => {
   })
 
   test('未登录访问受保护页重定向登录页，登录后回跳原址', async ({ page }) => {
-    await page.goto('/demo/tabs')
+    await page.goto('/demo/product')
 
     // 守卫拦截：跳登录页并回带 redirect（地址栏 query 为未编码形态）
-    await expect(page).toHaveURL(/\/login\?redirect=\/demo\/tabs/)
+    await expect(page).toHaveURL(/\/login\?redirect=\/demo\/product/)
 
-    // 登录后回跳原址
+    // 登录后回跳原址（admin 为 super_admin 全集，商品页可见）
     await loginViaUi(page, 'admin', 'admin123')
-    await expect(page.getByRole('button', { name: '打开 tab=1' })).toBeVisible()
+    await expect(page.getByPlaceholder('名称模糊匹配')).toBeVisible()
   })
 
   test('退出登录：确认后回登录页，再访问受保护页要求重新登录', async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe('登录链路', () => {
 
     await expect(page).toHaveURL(/\/login/)
     // 登出后再直链受保护页：重新要求登录
-    await page.goto('/demo/tabs')
+    await page.goto('/demo/product')
     await expect(page).toHaveURL(/\/login\?redirect=/)
   })
 })
