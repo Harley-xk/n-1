@@ -32,6 +32,17 @@ export function loginApi(payload: LoginPayload) {
   return http.post<{ token: string }>('/system/auth/login', payload)
 }
 
+/** 修改密码请求体（个人中心验旧设新） */
+export interface ChangePasswordPayload {
+  oldPassword: string
+  newPassword: string
+}
+
+/** 修改密码：成功后由调用方清令牌重新登录（其他设备存量 token 至多存续签发有效期） */
+export function changePasswordApi(payload: ChangePasswordPayload) {
+  return http.put<null>('/system/auth/change-password', payload)
+}
+
 /** 登出：无状态 JWT 无服务端态，接口供批次五登录日志埋点；本地清令牌由 store 承担 */
 export function logoutApi() {
   return http.post<null>('/system/auth/logout')

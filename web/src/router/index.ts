@@ -12,6 +12,7 @@ import DefaultLayout from '@/layouts/default/index.vue'
 
 import { demoRoutes } from './modules/demo'
 import { homeRoutes } from './modules/home'
+import { profileRoutes } from './modules/profile'
 import { systemRoutes } from './modules/system'
 
 declare module 'vue-router' {
@@ -38,6 +39,7 @@ export const layoutChildren: RouteRecordRaw[] = [
   ...homeRoutes,
   ...systemRoutes,
   ...demoRoutes,
+  ...profileRoutes,
   {
     // 刷新中转：进入即回跳原址（页签「刷新页签」经此强制重建组件实例）
     path: 'redirect/:path(.*)*',

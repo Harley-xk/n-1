@@ -16,7 +16,10 @@
     </span>
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item command="logout">
+        <el-dropdown-item command="profile">
+          个人中心
+        </el-dropdown-item>
+        <el-dropdown-item command="logout" divided>
           退出登录
         </el-dropdown-item>
       </el-dropdown-menu>
@@ -42,6 +45,10 @@ const avatarText = computed(() => {
 })
 
 async function handleCommand(command: string | number | object): Promise<void> {
+  if (command === 'profile') {
+    await router.push('/profile')
+    return
+  }
   if (command !== 'logout') {
     return
   }

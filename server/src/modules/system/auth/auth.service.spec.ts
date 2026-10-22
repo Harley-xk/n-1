@@ -21,7 +21,14 @@ function makeLoginLogService() {
 }
 
 function makeService(options: { user?: Partial<UserEntity> | null }) {
-  const userRepository = { findOne: jest.fn(() => Promise.resolve(options.user ?? null)) }
+  const saved: Partial<UserEntity>[] = []
+  const userRepository = {
+    findOne: jest.fn(() => Promise.resolve(options.user ?? null)),
+    save: jest.fn((entity: Partial<UserEntity>) => {
+      saved.push(entity)
+      return Promise.resolve(entity)
+    }),
+  }
   const jwtService = { signAsync: jest.fn(() => Promise.resolve('signed-token')) }
   const permissionService = {
     getUserRoleCodes: jest.fn(() => Promise.resolve(['super_admin'])),
@@ -34,7 +41,7 @@ function makeService(options: { user?: Partial<UserEntity> | null }) {
     permissionService as never,
     loginLogService as never,
   )
-  return { service, userRepository, jwtService, permissionService, loginLogService }
+  return { service, userRepository, jwtService, permissionService, loginLogService, saved }
 }
 
 const adminUser = {
@@ -100,6 +107,41 @@ describe('AuthService', () => {
     const bcrypt = await import('bcryptjs')
     expect(bcrypt.compareSync('admin123', ADMIN_PASSWORD_HASH)).toBe(true)
     expect(bcrypt.compareSync('other', ADMIN_PASSWORD_HASH)).toBe(false)
+  })
+})
+
+describe('AuthService 修改密码', () => {
+  // 浅拷贝防污染：changePassword 会就地修改实体 password 字段，不得改写共享常量 adminUser
+  it('原密码校验不通过应抛 AUTH_OLD_PASSWORD_MISMATCH（且不落库）', async () => {
+    const { service, saved } = makeService({ user: { ...adminUser } })
+    await expect(service.changePassword(adminUser.id, 'wrong-old', 'new-pass-123')).rejects.toMatchObject({
+      code: SystemErrorCode.AUTH_OLD_PASSWORD_MISMATCH.code,
+    })
+    expect(saved).toHaveLength(0)
+  })
+
+  it('新密码与原密码相同应抛 AUTH_PASSWORD_SAME', async () => {
+    const { service, saved } = makeService({ user: { ...adminUser } })
+    await expect(service.changePassword(adminUser.id, 'admin123', 'admin123')).rejects.toMatchObject({
+      code: SystemErrorCode.AUTH_PASSWORD_SAME.code,
+    })
+    expect(saved).toHaveLength(0)
+  })
+
+  it('修改成功应保存新散列（新口令命中、旧口令不再命中）', async () => {
+    const { service, saved } = makeService({ user: { ...adminUser } })
+    await service.changePassword(adminUser.id, 'admin123', 'new-pass-123')
+    const bcrypt = await import('bcryptjs')
+    expect(saved).toHaveLength(1)
+    expect(bcrypt.compareSync('new-pass-123', String(saved[0].password))).toBe(true)
+    expect(bcrypt.compareSync('admin123', String(saved[0].password))).toBe(false)
+  })
+
+  it('用户不存在应抛 USER_NOT_EXISTS', async () => {
+    const { service } = makeService({ user: null })
+    await expect(service.changePassword('ghost-id', 'admin123', 'new-pass-123')).rejects.toMatchObject({
+      code: SystemErrorCode.USER_NOT_EXISTS.code,
+    })
   })
 })
 

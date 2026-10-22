@@ -91,10 +91,6 @@ async function handleLogin(): Promise<void> {
         </el-button>
       </form>
     </main>
-
-    <footer class="login-footer">
-      <p>种子账号：admin / admin123</p>
-    </footer>
   </div>
 </template>
 
@@ -160,15 +156,5 @@ async function handleLogin(): Promise<void> {
 .login-submit {
   margin-top: 4px;
   width: 100%;
-}
-
-.login-footer {
-  font-size: 13px;
-  color: var(--n1-text-3);
-  text-align: center;
-}
-
-.login-footer p {
-  margin: 0;
 }
 </style>

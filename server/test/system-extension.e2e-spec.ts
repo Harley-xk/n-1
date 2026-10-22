@@ -24,6 +24,7 @@ import { RoleEntity } from '../src/modules/system/entities/role.entity'
 import { UserPostEntity } from '../src/modules/system/entities/user-post.entity'
 import { UserRoleEntity } from '../src/modules/system/entities/user-role.entity'
 import { UserEntity } from '../src/modules/system/entities/user.entity'
+import { SystemErrorCode } from '../src/modules/system/error-codes'
 import type { PermissionPoint } from '../src/modules/system/permissions'
 import {
   CONFIG_INIT_PASSWORD_ID,
@@ -115,6 +116,16 @@ describe('SystemExtension (e2e)', () => {
       .useValue({
         findOne: ({ where }: { where: Record<string, unknown> }) =>
           Promise.resolve(users.find(user => matches(user as never, where)) ?? null),
+        // 最后超管保护校验语义：id 为 In 操作符集合 + 其余字段等值（status）
+        find: ({ where }: { where: Record<string, unknown> }) => {
+          const ids = (where.id as { value?: string[] } | undefined)?.value
+          const rest = Object.fromEntries(Object.entries(where).filter(([key]) => key !== 'id'))
+          return Promise.resolve(users.filter((user) => {
+            if (ids !== undefined && !ids.includes(user.id!))
+              return false
+            return matches(user, rest)
+          }))
+        },
         findAndCount: () => Promise.resolve([users, users.length]),
         save: (entity: Partial<UserEntity>) => Promise.resolve(Object.assign(entity, { id: entity.id ?? NEW_USER_ID })),
         create: (data: Partial<UserEntity>) => Object.assign({ status: true, deptId: null }, data),
@@ -124,11 +135,14 @@ describe('SystemExtension (e2e)', () => {
       .useValue({
         find: (criteria: { where?: { status?: boolean } }) =>
           Promise.resolve(roles.filter(role => role.status === criteria.where?.status)),
+        // 最后超管保护校验语义：按 code 等值查 super_admin 角色
+        findOne: ({ where }: { where: Record<string, unknown> }) =>
+          Promise.resolve(roles.find(role => matches(role as never, where)) ?? null),
       })
       .overrideProvider(getRepositoryToken(UserRoleEntity))
       .useValue({
-        find: (criteria: { where: { userId: string } }) =>
-          Promise.resolve(userRoles.filter(relation => relation.userId === criteria.where.userId)),
+        find: ({ where }: { where: Record<string, unknown> }) =>
+          Promise.resolve(userRoles.filter(relation => matches(relation as never, where))),
         delete: () => Promise.resolve({}),
         insert: () => Promise.resolve({}),
       })
@@ -378,5 +392,37 @@ describe('SystemExtension (e2e)', () => {
       .expect((res) => {
         expect((res.body as ApiResponse).code).toBe(403)
       })
+  })
+
+  it('禁用最后一名启用超管应返回 400 与 USER_LAST_SUPER_ADMIN_FORBIDDEN', async () => {
+    const res = await request(server)
+      .put('/api/system/user/update')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ id: ADMIN_ID, nickname: '系统管理员', status: false })
+      .expect(400)
+    expect((res.body as ApiResponse).code).toBe(SystemErrorCode.USER_LAST_SUPER_ADMIN_FORBIDDEN.code)
+    // 拒绝路径不得落库：内存数据中 admin 仍为启用
+    const admin = users.find(user => user.id === ADMIN_ID)
+    expect(admin?.status).toBe(true)
+  })
+
+  it('存在另一名启用超管时禁用应放行（结尾恢复内存数据）', async () => {
+    // 造第二名启用超管：nobody 绑定 super_admin（直接操作内存桩数据）
+    userRoles.push({ userId: PLAIN_USER_ID, roleId: SUPER_ADMIN_ROLE_ID })
+    try {
+      await request(server)
+        .put('/api/system/user/update')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ id: ADMIN_ID, nickname: '系统管理员', status: false })
+        .expect(200)
+      const admin = users.find(user => user.id === ADMIN_ID)
+      expect(admin?.status).toBe(false)
+    }
+    finally {
+      // 恢复内存数据，防污染同文件后续断言
+      const admin = users.find(user => user.id === ADMIN_ID)
+      admin!.status = true
+      userRoles.splice(userRoles.findIndex(relation => relation.userId === PLAIN_USER_ID), 1)
+    }
   })
 })

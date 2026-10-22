@@ -19,7 +19,7 @@ import { UserEntity } from '../entities/user.entity'
 import { SystemErrorCode } from '../error-codes'
 import { LoginLogService } from '../login-log/login-log.service'
 import { PermissionService } from '../permission.service'
-import { LOGIN_LOG_TYPE_LOGIN, LOGIN_LOG_TYPE_LOGOUT } from '../system.constants'
+import { BCRYPT_COST, LOGIN_LOG_TYPE_LOGIN, LOGIN_LOG_TYPE_LOGOUT } from '../system.constants'
 import type { PermissionInfoVo } from './dto/permission-info.dto'
 
 @Injectable()
@@ -59,6 +59,21 @@ export class AuthService {
   /** 登出：无状态 JWT 无服务端态可清（前端清令牌承担），仅记录登出日志（logType 20） */
   logout(user: AuthUser, client: ClientInfo): void {
     this.recordLoginLog(LOGIN_LOG_TYPE_LOGOUT, user.id, user.username, client)
+  }
+
+  /** 修改密码：验旧设新（个人中心自助）；成功后由前端清令牌重新登录（其他设备存量 token 至多存续签发有效期） */
+  async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } })
+    if (!user)
+      throw businessError(SystemErrorCode.USER_NOT_EXISTS.message, { code: SystemErrorCode.USER_NOT_EXISTS })
+    if (!bcrypt.compareSync(oldPassword, user.password))
+      throw businessError(SystemErrorCode.AUTH_OLD_PASSWORD_MISMATCH.message, {
+        code: SystemErrorCode.AUTH_OLD_PASSWORD_MISMATCH,
+      })
+    if (oldPassword === newPassword)
+      throw businessError(SystemErrorCode.AUTH_PASSWORD_SAME.message, { code: SystemErrorCode.AUTH_PASSWORD_SAME })
+    user.password = await bcrypt.hash(newPassword, BCRYPT_COST)
+    await this.userRepository.save(user)
   }
 
   /** 按有效 token 中的用户 id 查启用用户：不存在 / 已删除 / 已停用均返回 null（Guard 存在性校验，ADR-003 即时失效语义） */

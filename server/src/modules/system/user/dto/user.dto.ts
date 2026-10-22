@@ -16,6 +16,7 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  MinLength,
 } from 'class-validator'
 
 import { PageParamDto } from '../../../../common/dto/page.dto'
@@ -70,9 +71,10 @@ export class UserCreateDto {
   @MaxLength(30)
   nickname: string
 
-  @ApiPropertyOptional({ description: '初始口令；不传则使用服务端配置的默认初始口令' })
+  @ApiPropertyOptional({ description: '初始口令（6-32 位）；不传则使用服务端配置的默认初始口令' })
   @IsOptional()
   @IsString()
+  @MinLength(6, { message: '初始口令长度不能少于 6 位' })
   @MaxLength(32)
   password?: string
 

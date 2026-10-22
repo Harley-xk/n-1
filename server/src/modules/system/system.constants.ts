@@ -8,7 +8,7 @@
 // 说明：内置 id 一律取 v4 形态（00000000-0000-4000-8000-…）并保留末段序号便于辨认。
 // 不能用 00000000-0000-0000-0000-… 形态：version 位为 0 不是合法 UUID 版本，
 // validator.js（isUUID 'all' 正则要求版本位 [1-8]）会拒绝，DTO 的 @IsUUID() 校验将无法通过。
-/** 内置管理员用户 id（种子迁移静态写入；更新 / 删除 / 重置密码 / 变更角色前校验拒绝） */
+/** 内置管理员用户 id（种子迁移静态写入；仅作数据约定，不再用于代码层个体保护——保护语义见「最后超管保护」） */
 export const ADMIN_USER_ID = '00000000-0000-4000-8000-000000000001'
 
 /** 内置超级管理员角色 id（种子迁移静态写入；更新 / 删除 / 分配权限前校验拒绝） */
@@ -47,6 +47,9 @@ export const DICT_DATA_DISABLE_ID = '00000000-0000-4000-8000-000000000033'
 export const CONFIG_INIT_PASSWORD_ID = '00000000-0000-4000-8000-000000000041'
 
 // ===== 业务常量 =====
+
+/** BCrypt cost 因子（$2a$10$）：用户域建号与个人中心改密共用，兼顾安全与登录耗时 */
+export const BCRYPT_COST = 10
 
 /** 参数键：新建用户初始口令（UserService 三级兜底链的第一级，缺省时回退 env 再回退硬编码） */
 export const CONFIG_KEY_USER_INIT_PASSWORD = 'system.user.init-password'

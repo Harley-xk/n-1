@@ -53,6 +53,8 @@ function makeUserRepository() {
           Object.entries(criteria.where).every(([key, value]) => user[key as keyof UserEntity] === value),
         ) ?? null,
       ),
+    // 改密保存：service 已就地修改内存实体（findOne 返回数组内引用），save 仅需回显
+    save: (entity: Partial<UserEntity>) => Promise.resolve(entity),
   }
 }
 
@@ -256,5 +258,50 @@ describe('Auth (e2e)', () => {
         resultCode: 0,
       }),
     )
+  })
+
+  it('修改密码：原密码不匹配应返回 400 与 AUTH_OLD_PASSWORD_MISMATCH', async () => {
+    const res = await request(server)
+      .put('/api/system/auth/change-password')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ oldPassword: 'wrong-old', newPassword: 'new-pass-456' })
+      .expect(400)
+    expect((res.body as ApiResponse).code).toBe(SystemErrorCode.AUTH_OLD_PASSWORD_MISMATCH.code)
+  })
+
+  it('修改密码：新密码与原密码相同应返回 400 与 AUTH_PASSWORD_SAME', async () => {
+    const res = await request(server)
+      .put('/api/system/auth/change-password')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ oldPassword: 'admin123', newPassword: 'admin123' })
+      .expect(400)
+    expect((res.body as ApiResponse).code).toBe(SystemErrorCode.AUTH_PASSWORD_SAME.code)
+  })
+
+  it('修改密码闭环：验旧设新后旧口令登录失败、新口令登录成功（结尾恢复种子口令）', async () => {
+    await request(server)
+      .put('/api/system/auth/change-password')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ oldPassword: 'admin123', newPassword: 'new-pass-456' })
+      .expect(200)
+
+    // 旧口令即刻失效（防账号枚举同码）
+    await request(server)
+      .post('/api/system/auth/login')
+      .send({ username: 'admin', password: 'admin123' })
+      .expect(400)
+      .expect((res) => {
+        expect((res.body as ApiResponse).code).toBe(SystemErrorCode.AUTH_LOGIN_FAILED.code)
+      })
+
+    // 新口令可登录
+    await request(server)
+      .post('/api/system/auth/login')
+      .send({ username: 'admin', password: 'new-pass-456' })
+      .expect(200)
+
+    // 恢复种子口令，防污染本文件共享内存数据
+    const admin = users.find(user => user.id === ADMIN_ID)
+    admin!.password = PASSWORD_HASH
   })
 })

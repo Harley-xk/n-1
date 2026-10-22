@@ -19,14 +19,18 @@ export const SystemErrorCode = {
   AUTH_LOGIN_FAILED: new ErrorCode(100000000, '登录账号或密码不正确'),
   /** 账号已被停用 */
   AUTH_LOGIN_DISABLED: new ErrorCode(100000001, '账号已被停用'),
+  /** 修改密码：原密码校验不通过 */
+  AUTH_OLD_PASSWORD_MISMATCH: new ErrorCode(100000002, '原密码不正确'),
+  /** 修改密码：新密码与原密码相同 */
+  AUTH_PASSWORD_SAME: new ErrorCode(100000003, '新密码不能与原密码相同'),
 
   // ===== 子域 001：用户 =====
   /** 用户不存在 */
   USER_NOT_EXISTS: new ErrorCode(100100000, '用户不存在'),
   /** 登录账号已存在 */
   USER_USERNAME_DUPLICATE: new ErrorCode(100100001, '登录账号已存在'),
-  /** 内置管理员不允许该操作（更新 / 删除 / 重置密码 / 变更角色） */
-  USER_ADMIN_OPERATION_FORBIDDEN: new ErrorCode(100100002, '内置管理员不允许该操作'),
+  /** 最后超管保护：不能禁用、删除或移除最后一名启用状态的超级管理员 */
+  USER_LAST_SUPER_ADMIN_FORBIDDEN: new ErrorCode(100100003, '不能禁用、删除或移除最后一名启用状态的超级管理员'),
 
   // ===== 子域 002：角色 =====
   /** 角色不存在 */

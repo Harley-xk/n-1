@@ -3,6 +3,7 @@ import * as bcrypt from 'bcryptjs'
 
 import type { UserEntity } from '../entities/user.entity'
 import { SystemErrorCode } from '../error-codes'
+import { ADMIN_USER_ID } from '../system.constants'
 import { UserService } from './user.service'
 
 /** 造 service：configTableValue 为参数表取值（null 表示未命中），envValue 为 env 兜底（undefined 表示未配置） */
@@ -10,11 +11,15 @@ function makeService(options: {
   configTableValue?: string | null
   envValue?: string
   users?: (Partial<UserEntity> & { id: string })[]
+  roles?: { id: string, code: string }[]
+  userRoles?: { userId: string, roleId: string }[]
   posts?: { id: string }[]
   userPosts?: { userId: string, postId: string }[]
 } = {}) {
   // 逐行浅拷贝：service 会就地修改实体字段，防跨用例污染共享常量
   const users = (options.users ?? []).map(row => ({ ...row }))
+  const roles = options.roles ?? []
+  const userRoles = options.userRoles ?? []
   const posts = options.posts ?? []
   const userPosts = options.userPosts ?? []
   const saved: Partial<UserEntity>[] = []
@@ -29,6 +34,18 @@ function makeService(options: {
           Object.entries(where).every(([key, value]) => (user as Record<string, unknown>)[key] === value),
         ) ?? null,
       ),
+    // 最后超管保护校验用：id 为 In 操作符（取 .value 数组），status 为布尔等值
+    find: ({ where }: { where: Record<string, unknown> }) =>
+      Promise.resolve(
+        users.filter((user) => {
+          const ids = (where.id as { value?: string[] } | undefined)?.value
+          if (ids !== undefined && !ids.includes(user.id))
+            return false
+          return Object.entries(where).every(([key, value]) =>
+            key === 'id' ? true : (user as Record<string, unknown>)[key] === value,
+          )
+        }),
+      ),
     findAndCount: () => Promise.resolve([users, users.length]),
     save: (entity: Partial<UserEntity>) => {
       saved.push(entity)
@@ -39,12 +56,25 @@ function makeService(options: {
     softRemove: () => Promise.resolve(),
   }
   const userRoleRepository = {
-    find: () => Promise.resolve([]),
+    find: ({ where }: { where: Record<string, unknown> }) =>
+      Promise.resolve(
+        userRoles.filter(relation =>
+          Object.entries(where).every(([key, value]) => (relation as Record<string, unknown>)[key] === value),
+        ),
+      ),
     delete: (criteria: Record<string, unknown>) => {
       userRoleDeleted.push(criteria)
       return Promise.resolve({})
     },
     insert: () => Promise.resolve({}),
+  }
+  const roleRepository = {
+    findOne: ({ where }: { where: Record<string, unknown> }) =>
+      Promise.resolve(
+        roles.find(role =>
+          Object.entries(where).every(([key, value]) => (role as Record<string, unknown>)[key] === value),
+        ) ?? null,
+      ),
   }
   const userPostRepository = {
     // where.userId 为 In 操作符（批量补全），桩直接返回全集由 service 分组
@@ -74,6 +104,7 @@ function makeService(options: {
     userRepository as never,
     userRoleRepository as never,
     userPostRepository as never,
+    roleRepository as never,
     deptRepository as never,
     postRepository as never,
     { get: () => options.envValue } as never,
@@ -165,5 +196,68 @@ describe('UserService 部门与岗位', () => {
     expect(page.total).toBe(2)
     expect(page.list[0]).toMatchObject({ username: 'alice', deptId: 'd1', deptName: '研发部', postIds: ['p1', 'p2'] })
     expect(page.list[1]).toMatchObject({ username: 'bob', deptId: null, deptName: null, postIds: [] })
+  })
+})
+
+describe('UserService 最后超管保护', () => {
+  // 通用场景：r-super 为 super_admin 角色，u-admin 为其唯一启用持有者
+  const lastSuperAdmin = {
+    roles: [{ id: 'r-super', code: 'super_admin' }],
+    userRoles: [{ userId: 'u-admin', roleId: 'r-super' }],
+    users: [{ id: 'u-admin', username: 'admin', nickname: '系统管理员', status: true }],
+  }
+
+  it('禁用最后一名启用超管应抛 USER_LAST_SUPER_ADMIN_FORBIDDEN', async () => {
+    const { service } = makeService(lastSuperAdmin)
+    await expect(
+      service.update({ id: 'u-admin', nickname: '系统管理员', status: false }),
+    ).rejects.toMatchObject({ code: SystemErrorCode.USER_LAST_SUPER_ADMIN_FORBIDDEN.code })
+  })
+
+  it('存在另一名启用超管时禁用应放行', async () => {
+    const { service, saved } = makeService({
+      ...lastSuperAdmin,
+      users: [
+        { id: 'u-admin', username: 'admin', nickname: '系统管理员', status: true },
+        { id: 'u-admin2', username: 'admin2', nickname: '备用管理员', status: true },
+      ],
+      userRoles: [
+        { userId: 'u-admin', roleId: 'r-super' },
+        { userId: 'u-admin2', roleId: 'r-super' },
+      ],
+    })
+    await service.update({ id: 'u-admin', nickname: '系统管理员', status: false })
+    expect(saved[0]).toMatchObject({ id: 'u-admin', status: false })
+  })
+
+  it('删除最后一名启用超管应拒绝', async () => {
+    const { service } = makeService(lastSuperAdmin)
+    await expect(service.remove('u-admin')).rejects.toMatchObject({
+      code: SystemErrorCode.USER_LAST_SUPER_ADMIN_FORBIDDEN.code,
+    })
+  })
+
+  it('解绑最后一名启用超管的 super_admin 角色应拒绝（且不执行删除）', async () => {
+    const { service, userRoleDeleted } = makeService(lastSuperAdmin)
+    await expect(service.assignRoles({ id: 'u-admin', roleIds: [] })).rejects.toMatchObject({
+      code: SystemErrorCode.USER_LAST_SUPER_ADMIN_FORBIDDEN.code,
+    })
+    expect(userRoleDeleted).toHaveLength(0)
+  })
+
+  it('重置密码对内置管理员应放行（恢复初始口令三级兜底）', async () => {
+    const { service, saved } = makeService({
+      ...lastSuperAdmin,
+      users: [{ id: ADMIN_USER_ID, username: 'admin', nickname: '系统管理员', status: true }],
+      userRoles: [{ userId: ADMIN_USER_ID, roleId: 'r-super' }],
+    })
+    await service.resetPassword(ADMIN_USER_ID)
+    expect(bcrypt.compareSync('admin123', String(saved[0].password))).toBe(true)
+  })
+
+  it('编辑超管基本信息（保持启用）应放行', async () => {
+    const { service, saved } = makeService(lastSuperAdmin)
+    await service.update({ id: 'u-admin', nickname: '新昵称', status: true })
+    expect(saved[0]).toMatchObject({ id: 'u-admin', nickname: '新昵称', status: true })
   })
 })

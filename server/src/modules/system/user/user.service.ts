@@ -16,15 +16,13 @@ import type { PageResult } from '../../../common/interfaces/page-result.interfac
 import { SystemConfigService } from '../config/config.service'
 import { DeptEntity } from '../entities/dept.entity'
 import { PostEntity } from '../entities/post.entity'
+import { RoleEntity } from '../entities/role.entity'
 import { UserPostEntity } from '../entities/user-post.entity'
 import { UserRoleEntity } from '../entities/user-role.entity'
 import { UserEntity } from '../entities/user.entity'
 import { SystemErrorCode } from '../error-codes'
-import { ADMIN_USER_ID, CONFIG_KEY_USER_INIT_PASSWORD } from '../system.constants'
+import { BCRYPT_COST, CONFIG_KEY_USER_INIT_PASSWORD, SUPER_ADMIN_ROLE_CODE } from '../system.constants'
 import type { UserAssignRoleDto, UserCreateDto, UserPageDto, UserUpdateDto, UserVo } from './dto/user.dto'
-
-/** BCrypt cost：$2a$10$，兼顾安全与登录耗时 */
-const BCRYPT_COST = 10
 
 @Injectable()
 export class UserService {
@@ -35,6 +33,8 @@ export class UserService {
     private readonly userRoleRepository: Repository<UserRoleEntity>,
     @InjectRepository(UserPostEntity)
     private readonly userPostRepository: Repository<UserPostEntity>,
+    @InjectRepository(RoleEntity)
+    private readonly roleRepository: Repository<RoleEntity>,
     @InjectRepository(DeptEntity)
     private readonly deptRepository: Repository<DeptEntity>,
     @InjectRepository(PostEntity)
@@ -85,10 +85,11 @@ export class UserService {
     return user.id
   }
 
-  /** 更新用户基本信息（账号不可改；部门 / 岗位差集同步；内置管理员保护） */
+  /** 更新用户基本信息（账号不可改；部门 / 岗位差集同步；禁用时最后超管保护） */
   async update(dto: UserUpdateDto): Promise<void> {
     const user = await this.getExistsUser(dto.id)
-    this.validateNotBuiltinUser(user.id)
+    if (dto.status === false)
+      await this.assertNotLastActiveSuperAdmin(user.id)
     await this.validateDeptExists(dto.deptId)
     await this.validatePostsExist(dto.postIds)
     user.nickname = dto.nickname
@@ -98,19 +99,18 @@ export class UserService {
     await this.saveUserPosts(user.id, dto.postIds ?? [])
   }
 
-  /** 删除用户：软删（BaseEntity）+ 物理清理角色与岗位两类关联 */
+  /** 删除用户：软删（BaseEntity）+ 物理清理角色与岗位两类关联（最后超管保护） */
   async remove(id: string): Promise<void> {
     const user = await this.getExistsUser(id)
-    this.validateNotBuiltinUser(user.id)
+    await this.assertNotLastActiveSuperAdmin(user.id)
     await this.userRepository.softRemove(user)
     await this.userRoleRepository.delete({ userId: user.id })
     await this.userPostRepository.delete({ userId: user.id })
   }
 
-  /** 重置密码：恢复为初始口令（三级兜底链，改参数即刻生效；内置管理员保护） */
+  /** 重置密码：恢复为初始口令（三级兜底链，改参数即刻生效；管理操作对全部用户放行，含内置管理员） */
   async resetPassword(id: string): Promise<void> {
     const user = await this.getExistsUser(id)
-    this.validateNotBuiltinUser(user.id)
     user.password = await this.hashPassword(await this.getInitPassword())
     await this.userRepository.save(user)
   }
@@ -122,13 +122,16 @@ export class UserService {
     return relations.map(relation => relation.roleId)
   }
 
-  /** 分配角色：全集差集增量绑定（物理删除 + 插入；内置管理员保护，防误解绑 super_admin 锁死系统） */
+  /** 分配角色：全集差集增量绑定（物理删除 + 插入；解绑 super_admin 时最后超管保护） */
   async assignRoles(dto: UserAssignRoleDto): Promise<void> {
     const user = await this.getExistsUser(dto.id)
-    this.validateNotBuiltinUser(user.id)
     const existing = await this.userRoleRepository.find({ where: { userId: user.id } })
     const existingRoleIds = new Set(existing.map(relation => relation.roleId))
     const targetRoleIds = new Set(dto.roleIds)
+    // 解绑场景校验：现有绑定含 super_admin 而目标集不含，且该用户是最后一名启用超管时拒绝
+    const superAdminRole = await this.roleRepository.findOne({ where: { code: SUPER_ADMIN_ROLE_CODE } })
+    if (superAdminRole && existingRoleIds.has(superAdminRole.id) && !targetRoleIds.has(superAdminRole.id))
+      await this.assertNotLastActiveSuperAdmin(user.id)
     // 删除：现有但目标没有
     const toRemove = [...existingRoleIds].filter(roleId => !targetRoleIds.has(roleId))
     if (toRemove.length > 0)
@@ -225,11 +228,24 @@ export class UserService {
     return user
   }
 
-  /** 内置管理员保护：更新 / 删除 / 重置密码 / 变更角色前拒绝 */
-  private validateNotBuiltinUser(userId: string): void {
-    if (userId === ADMIN_USER_ID)
-      throw businessError(SystemErrorCode.USER_ADMIN_OPERATION_FORBIDDEN.message, {
-        code: SystemErrorCode.USER_ADMIN_OPERATION_FORBIDDEN,
+  /**
+   * 最后超管保护：目标是当前唯一启用状态的 super_admin 持有者时拒绝（禁用 / 删除 / 解绑前校验）。
+   * 守护不变量「系统始终有一名可用超管」——admin 个体不特殊，存在其他启用超管即放行；
+   * 目标已停用时不构成可用超管的减少（含异常的零启用态，不阻挠数据修复），同样放行。
+   */
+  private async assertNotLastActiveSuperAdmin(userId: string): Promise<void> {
+    const superAdminRole = await this.roleRepository.findOne({ where: { code: SUPER_ADMIN_ROLE_CODE } })
+    // 防御兜底：角色缺失（异常数据）时无从谈起「最后超管」，放行
+    if (!superAdminRole)
+      return
+    const bindings = await this.userRoleRepository.find({ where: { roleId: superAdminRole.id } })
+    const holderIds = bindings.map(binding => binding.userId)
+    if (!holderIds.includes(userId))
+      return
+    const activeHolders = await this.userRepository.find({ where: { id: In(holderIds), status: true } })
+    if (activeHolders.some(holder => holder.id === userId) && activeHolders.length === 1)
+      throw businessError(SystemErrorCode.USER_LAST_SUPER_ADMIN_FORBIDDEN.message, {
+        code: SystemErrorCode.USER_LAST_SUPER_ADMIN_FORBIDDEN,
       })
   }
 

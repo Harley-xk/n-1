@@ -108,7 +108,7 @@ pnpm dev
 | 健康检查 | http://localhost:3000/api/health |
 | Swagger 接口文档 | http://localhost:3000/api-docs |
 
-> 内置管理员账号 **admin / admin123**（由种子迁移创建，初始口令可经参数 `system.user.init-password` 配置）；首页的「后端连通性检查」卡片可用于验证前后端链路是否打通。
+> 内置管理员账号 **admin / admin123**（由种子迁移创建，初始口令可经参数 `system.user.init-password` 配置）；首页的「后端连通性检查」卡片可用于验证前后端链路是否打通。**对外部署后请第一时间登录并在个人中心修改初始口令**（登录页不展示任何种子信息）。
 
 ## 常用命令
 
