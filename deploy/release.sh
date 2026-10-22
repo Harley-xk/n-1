@@ -1,7 +1,7 @@
 #!/bin/sh
 # 部署阶段执行脚本（发布包直部署）：解包 → 覆盖 → 迁移 → 重启 → 健康探测
 # 运行目录为构建产物下载后的目录（含 n1-release-*.tar.gz）
-# 服务器一次性初始化（node 22 / /opt/n1 / server.env / n1.service / nginx 站点）见 docs/指南/发布包打包与部署指南.md
+# 服务器一次性初始化（node 22 / 进程管理器 / /opt/n1 / server.env / nginx 站点）见 docs/指南/发布包打包与部署指南.md
 set -e
 
 APP_DIR=/opt/n1
@@ -9,7 +9,15 @@ APP_DIR=/opt/n1
 TAR=$(ls n1-release-*.tar.gz 2>/dev/null | head -1)
 [ -n "$TAR" ] || { echo "未找到发布包 n1-release-*.tar.gz"; exit 1; }
 [ -f "$APP_DIR/server.env" ] || { echo "缺少 $APP_DIR/server.env，请参照 server.env.example 初始化"; exit 1; }
-[ -f /etc/systemd/system/n1.service ] || { echo "缺少 /etc/systemd/system/n1.service（首次初始化见部署指南）"; exit 1; }
+
+# 进程管理器二选一（初始化时装哪个用哪个，见部署指南 §5）：
+# systemd（默认）装 n1.service；pm2 模式不装 n1.service，须已安装 pm2
+if [ -f /etc/systemd/system/n1.service ]; then
+  PM_MODE=systemd
+else
+  command -v pm2 >/dev/null 2>&1 || { echo "缺少 /etc/systemd/system/n1.service 且未安装 pm2（二选一初始化见部署指南 §5）"; exit 1; }
+  PM_MODE=pm2
+fi
 
 # 解包到同盘暂存目录（失败即退出，线上服务不受影响）
 STAGE=$APP_DIR/.staging
@@ -28,17 +36,31 @@ cd "$APP_DIR/server"
 set -a && . "$APP_DIR/server.env" && set +a
 ./node_modules/.bin/typeorm migration:run -d dist/data-source.js
 
-echo "== 重启服务 =="
-systemctl restart n1
+echo "== 重启服务（$PM_MODE）=="
+if [ "$PM_MODE" = systemd ]; then
+  systemctl restart n1
+else
+  # pm2：已注册则 restart --update-env（继承上方 source 的 server.env 最新值——pm2 默认保留进程旧环境）；
+  # 首次部署服务器尚无进程，自动 pm2 start 拉起（环境继承当前 shell）
+  if pm2 describe n1 >/dev/null 2>&1; then
+    pm2 restart n1 --update-env
+  else
+    pm2 start dist/main.js --name n1
+  fi
+fi
 
 echo "== 健康探测 =="
 for i in $(seq 1 10); do
   if curl -sf http://127.0.0.1:3000/api/health >/dev/null; then
     echo "健康检查通过（/api/health）"
-    systemctl --no-pager status n1 | head -5
+    if [ "$PM_MODE" = systemd ]; then
+      systemctl --no-pager status n1 | head -5
+    else
+      pm2 status n1
+    fi
     exit 0
   fi
   sleep 2
 done
-echo "警告：健康探测未通过，查看日志：journalctl -u n1 -e" >&2
+echo "警告：健康探测未通过，查看日志：journalctl -u n1 -e（systemd）或 pm2 logs n1（pm2）" >&2
 exit 1
