@@ -1,6 +1,6 @@
 #!/bin/sh
-# 云效「主机部署」执行脚本：加载新镜像并重建容器
-# 运行目录为云效下载构建产物后的目录（含 n1-image.tar.gz 与本 deploy/ 目录）
+# 部署阶段执行脚本（Docker 方案）：加载新镜像并重建容器
+# 运行目录为构建产物下载后的目录（含 n1-image.tar.gz 与本 deploy/ 目录）
 set -e
 
 APP_DIR=/opt/n1

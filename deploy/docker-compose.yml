@@ -1,5 +1,5 @@
 # n-1 单镜像运行编排（放服务器 /opt/n1/，与 server.env 同目录）
-# 镜像由云效主机部署经 deploy.sh 加载（n1:latest），首次初始化见 docs/指南/Docker打包与部署指南.md
+# 镜像由部署脚本 deploy.sh 加载（n1:latest），首次初始化见 docs/指南/Docker打包与部署指南.md
 services:
   n1:
     image: n1:latest

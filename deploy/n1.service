@@ -1,4 +1,4 @@
-# n-1 后端 systemd 服务单元（安装到 /etc/systemd/system/n1.service，见 docs/指南/打包与部署指南.md）
+# n-1 后端 systemd 服务单元（安装到 /etc/systemd/system/n1.service，见 docs/指南/发布包打包与部署指南.md）
 # 安装：cp deploy/n1.service /etc/systemd/system/ && systemctl daemon-reload && systemctl enable n1
 [Unit]
 Description=n-1 后端服务（NestJS）

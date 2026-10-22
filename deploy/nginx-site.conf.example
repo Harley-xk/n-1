@@ -1,7 +1,7 @@
-# n-1 服务器全局 nginx 站点配置示例（发布包直部署主方案）
+# n-1 服务器全局 nginx 站点配置示例（发布包直部署方案）
 # 拷入 /etc/nginx/conf.d/n1.conf（或 sites-enabled/ 后按发行版习惯软链），改 server_name 后 nginx -t && nginx -s reload
 # HTTPS：按需补 443 监听与证书；CSP / HSTS 等安全头由本层统一注入（见 docs/架构设计.md）
-# docker 备选方案的站点配置见同目录 nginx-gateway.conf.example（纯转发到容器 8080）
+# Docker 方案的站点配置见同目录 nginx-gateway.conf.example（纯转发到容器 8080）
 server {
     listen 80;
     # 修改为实际域名（或服务器 IP）

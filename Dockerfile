@@ -41,7 +41,7 @@ RUN pnpm install --frozen-lockfile --prod --filter server
 # ---------- 运行时镜像：node + nginx 单镜像 ----------
 FROM node:22-alpine
 
-# apk 换阿里云源（dl-cdn 国内不可达；云效构建机在阿里云内网访问更快）
+# apk 换阿里云镜像源（dl-cdn 在国内网络环境可达性差）
 RUN sed -i 's#https://dl-cdn.alpinelinux.org/alpine#https://mirrors.aliyun.com/alpine#g' /etc/apk/repositories \
   && apk add --no-cache nginx
 

@@ -1,7 +1,7 @@
 #!/bin/sh
-# 云效「主机部署」执行脚本（发布包直部署）：解包 → 覆盖 → 迁移 → 重启 → 健康探测
-# 运行目录为云效下载构建产物后的目录（含 n1-release-*.tar.gz）
-# 服务器一次性初始化（node 22 / /opt/n1 / server.env / n1.service / nginx 站点）见 docs/指南/打包与部署指南.md
+# 部署阶段执行脚本（发布包直部署）：解包 → 覆盖 → 迁移 → 重启 → 健康探测
+# 运行目录为构建产物下载后的目录（含 n1-release-*.tar.gz）
+# 服务器一次性初始化（node 22 / /opt/n1 / server.env / n1.service / nginx 站点）见 docs/指南/发布包打包与部署指南.md
 set -e
 
 APP_DIR=/opt/n1
@@ -9,7 +9,7 @@ APP_DIR=/opt/n1
 TAR=$(ls n1-release-*.tar.gz 2>/dev/null | head -1)
 [ -n "$TAR" ] || { echo "未找到发布包 n1-release-*.tar.gz"; exit 1; }
 [ -f "$APP_DIR/server.env" ] || { echo "缺少 $APP_DIR/server.env，请参照 server.env.example 初始化"; exit 1; }
-[ -f /etc/systemd/system/n1.service ] || { echo "缺少 /etc/systemd/system/n1.service（首次初始化见部署指南 §4）"; exit 1; }
+[ -f /etc/systemd/system/n1.service ] || { echo "缺少 /etc/systemd/system/n1.service（首次初始化见部署指南）"; exit 1; }
 
 # 解包到同盘暂存目录（失败即退出，线上服务不受影响）
 STAGE=$APP_DIR/.staging
