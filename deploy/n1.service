@@ -1,0 +1,20 @@
+# n-1 后端 systemd 服务单元（安装到 /etc/systemd/system/n1.service，见 docs/指南/打包与部署指南.md）
+# 安装：cp deploy/n1.service /etc/systemd/system/ && systemctl daemon-reload && systemctl enable n1
+[Unit]
+Description=n-1 后端服务（NestJS）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/n1/server
+# 外置运行配置（DB / JWT / 签名密钥等），与发布包解耦
+EnvironmentFile=/opt/n1/server.env
+ExecStart=/usr/bin/node dist/main.js
+Restart=on-failure
+RestartSec=3
+# 如需收紧权限可换专用运行用户（须对 /opt/n1 有读权限、对日志目录有写权限）
+# User=n1
+
+[Install]
+WantedBy=multi-user.target

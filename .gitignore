@@ -6,6 +6,7 @@ node_modules/
 # 构建产物
 dist/
 coverage/
+release/
 
 # Playwright 产物（报告与运行时产物，e2e 包）
 playwright-report/
