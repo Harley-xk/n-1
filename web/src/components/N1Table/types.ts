@@ -12,7 +12,7 @@ import type { VxeColumnPropTypes } from 'vxe-table'
  * field 必填且页面内唯一（持久化与拖拽的列标识）；其余属性原样透传 vxe-column
  */
 export interface N1TableColumn {
-  /** 列标识（纯操作列统一 'action'） */
+  /** 列标识（纯操作列统一 'action'，自动启用按钮动态收纳——见 RowActions 与设计文档 §8） */
   field: string
   title?: string
   width?: number | string

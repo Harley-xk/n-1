@@ -16,7 +16,10 @@
   >
     <vxe-column v-for="col in renderColumns" :key="col.field" v-bind="colAttrs(col)">
       <template v-if="col.slot" #default="{ row }">
-        <slot :name="col.slot" :row="row" />
+        <RowActions v-if="isActionColumn(col)">
+          <slot :name="col.slot" :row="row" />
+        </RowActions>
+        <slot v-else :name="col.slot" :row="row" />
       </template>
     </vxe-column>
 
@@ -32,6 +35,7 @@ import { useRoute } from 'vue-router'
 import type { VxeTablePropTypes } from 'vxe-table'
 
 import { applyColumnState, loadColumnState, saveColumnState } from './column-persist'
+import RowActions from './RowActions.vue'
 import type { N1TableColumn } from './types'
 
 // 命名对齐目录名（业务页手动 import）
@@ -91,10 +95,20 @@ const persistedState = loadColumnState(viewKey.value)
 /** 渲染列：应用持久化状态（order 重排 + width 覆盖）后剔除 slot 标记以外的处理 */
 const renderColumns = computed(() => applyColumnState(props.columns, persistedState))
 
+/** 纯操作列（约定 field === 'action' 且走插槽）：插槽按钮包进 RowActions 动态收纳，页面零改动 */
+function isActionColumn(col: N1TableColumn): boolean {
+  return col.field === 'action' && !!col.slot
+}
+
 /** slot 为插槽标记而非 vxe-column 属性，剔除避免落到 DOM attribute */
 function colAttrs(col: N1TableColumn): Record<string, unknown> {
   const attrs: Record<string, unknown> = { ...col }
   delete attrs.slot
+  // 注意：操作列不可注入列级 showOverflow: false——vxe 的 isAllOverflow 是「全部列都开溢出」的
+  // 聚合（任一列 false 即全局关闭，table.js computeIsBodyRenderOptimize），会连带关闭 body 渲染
+  // 优化模式，fixed 列「主区置空 + 克隆区渲染」分工翻转为双份全渲染（克隆行携带全部列文本）。
+  // col--ellipsis 三件套（nowrap / ellipsis / hidden）对 RowActions 的 flex 容器无实际影响：
+  // root 自带 overflow hidden 裁剪，收纳生效后内容不溢出也就不触发 tooltip
   return attrs
 }
 

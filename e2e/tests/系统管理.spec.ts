@@ -7,6 +7,7 @@
 import { expect, test } from '@playwright/test'
 
 import { loginViaApi } from './support/auth'
+import { clickRowAction } from './support/row-actions'
 
 /** 弹窗 / 抽屉内的主按钮（源码两字无空格，与登录页「登 录」的手写空格形态不同） */
 function primaryButton(scope: import('@playwright/test').Locator, name: string) {
@@ -63,8 +64,9 @@ test.describe('系统管理', () => {
     await expect(row).toBeVisible()
     await expect(row).toContainText('研发部')
 
-    // 行内删除闭环（MessageBox 默认确认按钮为「确定」，弹层内定位避免与行内 link 同名冲突）
-    await row.getByRole('button', { name: '删除' }).click()
+    // 行内删除闭环（MessageBox 默认确认按钮为「确定」，弹层内定位避免与行内 link 同名冲突；
+    // 用户页 260px 列宽装不下四按钮，「删除」被收纳进「更多操作」popover，统一走收纳感知点击）
+    await clickRowAction(page, row, '删除')
     await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
     await expect(page.locator('.vxe-body--row').filter({ hasText: nickname })).toHaveCount(0)
   })
@@ -73,7 +75,7 @@ test.describe('系统管理', () => {
     await page.goto('/system/user')
 
     const row = page.locator('.vxe-body--row').filter({ hasText: '系统管理员' }).first()
-    await row.getByRole('button', { name: '分配角色' }).click()
+    await clickRowAction(page, row, '分配角色')
 
     // 弹窗内启用角色列表渲染且 super_admin 处于勾选态（原生 input 隐藏，只断言 checked）
     const dialog = page.locator('.el-dialog').filter({ hasText: '分配角色' })
@@ -103,7 +105,7 @@ test.describe('系统管理', () => {
     await expect(row).toBeVisible()
 
     // 分配权限：分组标题渲染（权限点按域分组），勾选「用户管理」组一项后保存
-    await row.getByRole('button', { name: '分配权限' }).click()
+    await clickRowAction(page, row, '分配权限')
     const permDialog = page.locator('.el-dialog').filter({ hasText: '分配权限' })
     await expect(permDialog).toBeVisible()
     await expect(permDialog.getByText('用户管理')).toBeVisible()
@@ -116,11 +118,11 @@ test.describe('系统管理', () => {
     await expect(page.locator('.el-message').getByText('分配成功')).toBeVisible()
 
     // 重开弹窗验证保存生效（勾选态回显），随后取消并删除角色闭环
-    await row.getByRole('button', { name: '分配权限' }).click()
+    await clickRowAction(page, row, '分配权限')
     await expect(permDialog.getByRole('checkbox', { name: '用户查询' })).toBeChecked()
     await primaryButton(permDialog, '取消').click()
 
-    await row.getByRole('button', { name: '删除' }).click()
+    await clickRowAction(page, row, '删除')
     await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
     await expect(page.locator('.vxe-body--row').filter({ hasText: roleName })).toHaveCount(0)
   })
@@ -132,7 +134,7 @@ test.describe('系统管理', () => {
     const row = page.locator('.vxe-body--row').filter({ hasText: '通用状态' })
     await expect(row).toBeVisible()
     await expect(row.locator('.el-tag--success')).toBeVisible()
-    await row.getByRole('button', { name: '数据' }).click()
+    await clickRowAction(page, row, '数据')
 
     // 抽屉内独立分页数据表：种子两行齐全（两条数据均启用，状态列同为「启用」，行区分靠标签列）
     // 行计数限定主区容器：fixed 操作列会额外克隆一份 fixed-right body（克隆行仅含操作列文本）
@@ -146,6 +148,43 @@ test.describe('系统管理', () => {
     // 标签配色列渲染语义色 tag（启用行 success、停用行 danger）
     await expect(enabledRow.locator('.el-tag--success').first()).toBeVisible()
     await expect(disabledRow.locator('.el-tag--danger')).toBeVisible()
+  })
+
+  test('用户管理：操作列窄列宽下动态收纳，popover 弹出隐藏按钮保留原行为', async ({ page }) => {
+    // 预设列宽持久化把 action 列压到 140px（内容宽约 108px，仅容「编辑」+「更多」），
+    // 走 applyColumnState 真实恢复链路（列宽拖窄 → 落盘 → 刷新恢复的等价构造）
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'N1_TABLE_COLS',
+        JSON.stringify({
+          SystemUser: {
+            order: ['username', 'nickname', 'deptName', 'status', 'createTime', 'action'],
+            widths: { action: 140 },
+          },
+        }),
+      )
+    })
+    await page.goto('/system/user')
+
+    // 主区行定位（fixed 操作列另有克隆区，行级按钮去重）；admin 行按钮最多（4 个）
+    const row = page
+      .locator('.vxe-table--main-wrapper .vxe-body--row')
+      .filter({ hasText: '系统管理员' })
+    await expect(row.getByRole('button', { name: '编辑' })).toBeVisible()
+    // 放不下的尾部项被收纳：popover 未打开时隐藏按钮不渲染
+    await expect(row.getByRole('button', { name: '重置密码' })).toBeHidden()
+
+    // 点击「更多操作」（MoreFilled 图标按钮，aria-label 为 accessible name）弹出隐藏项
+    await row.getByRole('button', { name: '更多操作' }).click()
+    const popList = page.locator('.n1-row-actions-pop__list')
+    await expect(popList).toBeVisible()
+    await expect(popList.getByRole('button', { name: '重置密码' })).toBeVisible()
+
+    // 隐藏按钮保留原 @click 行为：弹原确认弹窗后取消（闭环不产生写操作）
+    await popList.getByRole('button', { name: '重置密码' }).click()
+    await expect(page.locator('.el-message-box').getByText('重置为初始口令')).toBeVisible()
+    await page.locator('.el-message-box').getByRole('button', { name: '取消' }).click()
+    await expect(page.locator('.el-message-box')).toBeHidden()
   })
 
   test('登录日志：首行为本次 API 登录记录（admin / 登录 / 成功）', async ({ page }) => {

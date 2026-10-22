@@ -6,6 +6,7 @@
 import { expect, test } from '@playwright/test'
 
 import { loginViaApi } from './support/auth'
+import { clickRowAction } from './support/row-actions'
 
 /** 页签元素定位（fullPath 为 data-fullpath 属性） */
 function tagOf(page: import('@playwright/test').Page, fullPath: string) {
@@ -68,7 +69,7 @@ test.describe('开发示例', () => {
     await expect(row.locator('.el-tag--success', { hasText: '服饰' })).toBeVisible()
 
     // 编辑调价：168.8 → 168.80（弹窗标题切换为编辑态）
-    await row.getByRole('button', { name: '编辑' }).click()
+    await clickRowAction(page, row, '编辑')
     const editDialog = page.locator('.el-dialog').filter({ hasText: '编辑商品' })
     await expect(editDialog).toBeVisible()
     await editDialog.getByRole('spinbutton').fill('168.8')
@@ -77,7 +78,7 @@ test.describe('开发示例', () => {
     await expect(row.getByText('168.80')).toBeVisible()
 
     // 删除闭环（MessageBox 确认在弹层内定位，避免与行内 link 同名冲突）
-    await row.getByRole('button', { name: '删除' }).click()
+    await clickRowAction(page, row, '删除')
     await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click()
     await expect(page.locator('.vxe-body--row').filter({ hasText: name })).toHaveCount(0)
   })
