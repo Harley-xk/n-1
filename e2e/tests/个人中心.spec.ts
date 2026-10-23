@@ -9,21 +9,22 @@ import { loginViaApi, loginViaUi } from './support/auth'
 const TEMP_PASSWORD = 'e2e-temp-pass'
 
 test.beforeEach(async ({ request }) => {
-  const response = await request.get('http://localhost:3000/api/health')
-  test.skip(!response.ok(), '后端未就绪，个人中心全链路用例跳过')
+  // 无库环境（后端 webServer 未注册）下连接被拒会抛异常，须 catch 后按未就绪跳过对齐既有探测写法
+  const response = await request.get('http://localhost:3000/api/health').catch(() => null)
+  test.skip(!response?.ok(), '后端未就绪，个人中心全链路用例跳过')
 })
 
 test.afterEach(async ({ request }) => {
   // 兜底恢复：闭环用例中途失败可能留下临时口令，此处改回种子口令（签名开启的环境下 API 不可达则跳过，UI 主链路仍会改回）
   const seeded = await request.post('http://localhost:3000/api/system/auth/login', {
     data: { username: 'admin', password: 'admin123' },
-  })
-  if (seeded.ok())
+  }).catch(() => null)
+  if (seeded?.ok())
     return // 种子口令完好，无需恢复
   const recovery = await request.post('http://localhost:3000/api/system/auth/login', {
     data: { username: 'admin', password: TEMP_PASSWORD },
-  })
-  if (!recovery.ok())
+  }).catch(() => null)
+  if (!recovery?.ok())
     return
   const { data } = await recovery.json() as { data: { token: string } }
   await request.put('http://localhost:3000/api/system/auth/change-password', {
