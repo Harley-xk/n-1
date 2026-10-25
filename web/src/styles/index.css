@@ -71,6 +71,11 @@ body {
   border-top: 1px solid var(--n1-border);
 }
 
+/* 管理页查询行：压缩 el-form-item 默认 18px 底距（折行时保留 8px 行距） */
+.search-bar .el-form-item {
+  margin-bottom: 8px;
+}
+
 /* 管理页查询行：末项右对齐放置主操作按钮（新增等） */
 .search-bar .el-form-item:last-child {
   margin-left: auto;
