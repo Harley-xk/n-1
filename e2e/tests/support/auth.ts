@@ -5,7 +5,7 @@ import type { Page, APIRequestContext } from '@playwright/test'
 import { expect } from '@playwright/test'
 
 /** 纯前端用例的模拟登录态：token 预置 + get-permission-info 路由 mock（守卫拉取即命中） */
-export async function mockAuthState(page: Page): Promise<void> {
+export async function mockAuthState(page: Page, permissions: string[] = ['demo:product:query']): Promise<void> {
   await page.addInitScript(() => localStorage.setItem('N1_TOKEN', 'e2e-mock-token'))
   await page.route('**/api/system/auth/get-permission-info', (route) => {
     void route.fulfill({
@@ -16,8 +16,9 @@ export async function mockAuthState(page: Page): Promise<void> {
         data: {
           user: { id: 'u-e2e', username: 'mock', nickname: '模拟用户' },
           roles: ['operator'],
-          // 商品页挂 meta.permission，须授查询权否则「开发示例」分组被菜单过滤
-          permissions: ['demo:product:query'],
+          // 商品页挂 meta.permission，须授查询权否则「开发示例」分组被菜单过滤；
+          // 其余页面按需传入额外权限点
+          permissions,
         },
       }),
     })

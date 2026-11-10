@@ -12,7 +12,6 @@
         :collapse="app.effectiveSidebarCollapsed"
         :collapse-transition="false"
         router
-        unique-opened
       >
         <SideMenuItem :menus="menus" />
       </el-menu>

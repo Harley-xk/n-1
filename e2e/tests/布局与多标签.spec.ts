@@ -56,6 +56,28 @@ test.describe('布局门面', () => {
     await expect(page.locator('.n1-tags-bar').getByTitle('刷新当前页')).toBeVisible()
   })
 
+  test('侧栏分组可独立展开 / 收起，互不干扰', async ({ page }) => {
+    // 两组各授一个子页查询权（分组按子项权限过滤后可见），验证多分组同时展开
+    await mockAuthState(page, ['demo:product:query', 'system:user:query'])
+    await page.goto('/')
+
+    const demoGroup = page.getByRole('menuitem', { name: '开发示例' })
+    const systemGroup = page.getByRole('menuitem', { name: '系统管理' })
+    const productItem = page.getByRole('menuitem', { name: '商品管理' })
+    const userItem = page.getByRole('menuitem', { name: '用户管理' })
+
+    // 依次展开两个分组：互不排他，两个子项同时可见
+    await demoGroup.click()
+    await systemGroup.click()
+    await expect(productItem).toBeVisible()
+    await expect(userItem).toBeVisible()
+
+    // 收起其中一个分组，另一分组保持展开
+    await demoGroup.click()
+    await expect(productItem).toBeHidden()
+    await expect(userItem).toBeVisible()
+  })
+
   test('菜单导航落签，关闭页签回到相邻签', async ({ page }) => {
     await page.goto('/')
 
